@@ -6,7 +6,9 @@ June, 2013.
 */
 package govt
 
-import "log"
+import "os"
+import "fmt"
+import "bytes"
 import "net/url"
 import "net/http"
 import "encoding/json"
@@ -25,21 +27,38 @@ type Scan struct {
 	Update   string `json:"update"`
 }
 
+// Status is the set of fields shared among all VT responses.
+type Status struct {
+	ResponseCode int    `json:"response_code"`
+	VerboseMsg   string `json:"verbose_msg"`
+}
+
 // Report is defined by VT.
 type Report struct {
-	ResponseCode int             `json:"response_code"`
-	VerboseMsg   string          `json:"verbose_msg"`
-	Resource     string          `json:"resource"`
-	ScanId       string          `json:"scan_id"`
-	Md5          string          `json:"md5"`
-	Sha1         string          `json:"sha1"`
-	Sha256       string          `json:"sha256"`
-	ScanDate     string          `json:"scan_date"`
-	Positives    uint16          `json:"positives"`
-	Total        uint16          `json:"total"`
-	Scans        map[string]Scan `json:"scans"`
-	Permalink    string          `json:"permalink"`
+	Status
+	Resource  string          `json:"resource"`
+	ScanId    string          `json:"scan_id"`
+	Md5       string          `json:"md5"`
+	Sha1      string          `json:"sha1"`
+	Sha256    string          `json:"sha256"`
+	ScanDate  string          `json:"scan_date"`
+	Positives uint16          `json:"positives"`
+	Total     uint16          `json:"total"`
+	Scans     map[string]Scan `json:"scans"`
+	Permalink string          `json:"permalink"`
 }
+
+// RescanResult is defined by VT.
+type RescanResult struct {
+	Status
+	Resource  string `json:"resource"`
+	ScanId    string `json:"scan_id"`
+	Permalink string `json:"permalink"`
+	Sha256    string `json:"sha256"`
+}
+
+// RescanResults is defined by VT.
+type RescanResults[]RescanResult
 
 // ClientError is a generic error specific to the `govt` package.
 type ClientError struct {
@@ -67,31 +86,125 @@ func (self *Client) checkApiKey() (err error) {
 	}
 }
 
-// GetReport fetches the AV scan reports tracked by VT given an MD5 hash value.
-func (self *Client) GetReport(md5 string) (r *Report, err error) {
+// makeApiGetRequest fetches a URL with querystring via HTTP get and
+//  returns the response if the status code is HTTP 200
+// `parameters` should not include the apikey.
+// The caller must call `resp.Body.Close()`.
+func (self *Client) makeApiGetRequest(fullurl string, parameters map[string]string) (resp *http.Response, err error) {
 	if err = self.checkApiKey(); err != nil {
-		log.Println("Invalid API Key: ", err.Error())
-		return &Report{}, err
+		return resp, err
 	}
-
-	var fullurl string = self.Url + "file/report?"
-	r = &Report{}
 
 	values := url.Values{}
 	values.Set("apikey", self.Apikey)
-	values.Add("resource", md5)
-
-	resp, err := http.Get(fullurl + values.Encode())
-	if err != nil {
-		log.Println("Failed to get ", fullurl+values.Encode(), ": ", err.Error())
-		return &Report{}, err
+	for k, v := range parameters {
+		values.Add(k, v)
 	}
-	defer resp.Body.Close()
+
+	resp, err = http.Get(fullurl + values.Encode())
+	if err != nil {
+		return resp, err
+	}
+
+	if resp.StatusCode != 200 {
+		var msg string = fmt.Sprintf("Unexpected status code: %d", resp.StatusCode)
+    resp.Write(os.Stdout)
+		return resp, ClientError{msg: msg}
+	}
+
+	return resp, nil
+}
+
+// makeApiPostRequest fetches a URL with querystring via HTTP POST and
+//  returns the response if the status code is HTTP 200
+// `parameters` should not include the apikey.
+// The caller must call `resp.Body.Close()`.
+func (self *Client) makeApiPostRequest(fullurl string, parameters map[string]string) (resp *http.Response, err error) {
+	if err = self.checkApiKey(); err != nil {
+		return resp, err
+	}
+
+	values := url.Values{}
+	values.Set("apikey", self.Apikey)
+	for k, v := range parameters {
+		values.Add(k, v)
+	}
+
+	resp, err = http.PostForm(fullurl, values)
+	if err != nil {
+		return resp, err
+	}
+
+	if resp.StatusCode != 200 {
+		var msg string = fmt.Sprintf("Unexpected status code: %d", resp.StatusCode)
+    resp.Write(os.Stdout)
+		return resp, ClientError{msg: msg}
+	}
+
+	return resp, nil
+}
+
+// RescanFile asks VT to redo analysis on the specified file.
+func (self *Client) RescanFile(md5 string) (r *RescanResult, err error) {
+	r = &RescanResult{}
+
+  url := self.Url+"file/rescan?"
+  parameters := map[string]string{"resource": md5}
+	resp, err := self.makeApiPostRequest(url, parameters)
+	if err != nil {
+		return r, err
+	}
+  defer resp.Body.Close()
 
 	dec := json.NewDecoder(resp.Body)
 	if err = dec.Decode(r); err != nil {
-		log.Println("Failed to parse response: ", err.Error())
-		return &Report{}, err
+		return r, err
+	}
+
+	return r, nil
+}
+
+// RescanFile asks VT to redo analysis on the specified files.
+func (self *Client) RescanFiles(md5s[]string) (r *RescanResults, err error) {
+	r = &RescanResults{}
+
+  var allMd5s bytes.Buffer
+  for _, md5 := range md5s {
+    allMd5s.WriteString(md5)
+    allMd5s.WriteString(",")
+  }
+
+  url := self.Url+"file/rescan?"
+  parameters := map[string]string{"resource": allMd5s.String()}
+	resp, err := self.makeApiPostRequest(url, parameters)
+	if err != nil {
+		return r, err
+	}
+  defer resp.Body.Close()
+
+	dec := json.NewDecoder(resp.Body)
+	if err = dec.Decode(r); err != nil {
+		return r, err
+	}
+
+	return r, nil
+}
+
+// GetReport fetches the AV scan reports tracked by VT given an MD5 hash value.
+func (self *Client) GetReport(md5 string) (r *Report, err error) {
+	r = &Report{}
+
+  url := self.Url+"file/report?"
+  parameters := map[string]string{"resource": md5}
+	resp, err := self.makeApiGetRequest(url, parameters)
+	if err != nil {
+		return r, err
+	}
+  defer resp.Body.Close()
+
+	dec := json.NewDecoder(resp.Body)
+	if err = dec.Decode(r); err != nil {
+		return r, err
 	}
 
 	return r, nil
