@@ -69,10 +69,10 @@ func (self *Client) checkApiKey() (err error) {
 
 // GetReport fetches the AV scan reports tracked by VT given an MD5 hash value.
 func (self *Client) GetReport(md5 string) (r *Report, err error) {
-  if err = self.checkApiKey(); err != nil {
+	if err = self.checkApiKey(); err != nil {
 		log.Println("Invalid API Key: ", err.Error())
 		return &Report{}, err
-  }
+	}
 
 	var fullurl string = self.Url + "file/report?"
 	r = &Report{}
@@ -96,4 +96,3 @@ func (self *Client) GetReport(md5 string) (r *Report, err error) {
 
 	return r, nil
 }
-
