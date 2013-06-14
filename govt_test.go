@@ -1,3 +1,12 @@
+/*
+A few test cases for the `govt` package.
+
+We cannot have many test cases, because the public API is limited to four requests per minute.
+So here, we demonstrate that the scheme works, and leave it at that
+
+Written by Willi Ballenthin while at Mandiant.
+June, 2013.
+*/
 package govt
 
 import "testing"

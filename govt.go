@@ -1,3 +1,9 @@
+/*
+govt is a VirusTotal API v2 client written for Google Go.
+
+Written by Willi Ballenthin while at Mandiant.
+June, 2013.
+*/
 package govt
 
 import "log"
@@ -5,11 +11,13 @@ import "net/url"
 import "net/http"
 import "encoding/json"
 
+// Client interacts with the services provided by VirusTotal.
 type Client struct {
 	Apikey string // private API key
 	Url    string // VT URL, probably ends with .../v2/. Must end in '/'.
 }
 
+// Scan is defined by VT.
 type Scan struct {
 	Detected bool   `json:"detected"`
 	Version  string `json:"version"`
@@ -17,6 +25,7 @@ type Scan struct {
 	Update   string `json:"update"`
 }
 
+// Report is defined by VT.
 type Report struct {
 	ResponseCode int             `json:"response_code"`
 	VerboseMsg   string          `json:"verbose_msg"`
@@ -32,18 +41,24 @@ type Report struct {
 	Permalink    string          `json:"permalink"`
 }
 
+// ClientError is a generic error specific to the `govt` package.
 type ClientError struct {
 	msg string
 }
 
+// Error returns a string representation of the error condition.
 func (self ClientError) Error() string {
 	return self.msg
 }
 
+// UseDefaultUrl configures a `Client` to use the default public
+//   VT URL published on their website.
 func (self *Client) UseDefaultUrl() {
 	self.Url = "https://www.virustotal.com/vtapi/v2/"
 }
 
+// checkApiKey ensures that the user configured her API key,
+//   or returns an error.
 func (self *Client) checkApiKey() (err error) {
 	if self.Apikey == "" {
 		return ClientError{msg: "Empty API key is invalid"}
@@ -52,6 +67,7 @@ func (self *Client) checkApiKey() (err error) {
 	}
 }
 
+// GetReport fetches the AV scan reports tracked by VT given an MD5 hash value.
 func (self *Client) GetReport(md5 string) (r *Report, err error) {
   if err = self.checkApiKey(); err != nil {
 		log.Println("Invalid API Key: ", err.Error())
