@@ -83,7 +83,7 @@ type UrlReport struct {
 	ScanId     string             `json:"scan_id"`
 	ScanDate   string             `json:"scan_date"`
 	Permalink  string             `json:"permalink"`
-	Positives  uint16                `json:"positives"`
+	Positives  uint16             `json:"positives"`
 	Scans      map[string]UrlScan `json:"scans"`
 	FileScanId string             `json:"filescan_id"`
 }
@@ -96,36 +96,36 @@ type ScanUrlResults []ScanUrlResult
 
 // IpResolution is defined by VT.
 type IpResolution struct {
-  LastResolved string `json:"last_resolved"`
-  Hostname string `json:"hostname"`
+	LastResolved string `json:"last_resolved"`
+	Hostname     string `json:"hostname"`
 }
 
 // DetectedUrl is defined by VT.
 type DetectedUrl struct {
-  Url string `json:"url"`
-  Total uint16 `json:"total"`
-  Positives uint16 `json:"positives"`
-  ScanDate string `json:"scan_date"`
+	Url       string `json:"url"`
+	Total     uint16 `json:"total"`
+	Positives uint16 `json:"positives"`
+	ScanDate  string `json:"scan_date"`
 }
 
 // IpReport is defined by VT.
 type IpReport struct {
-  Status
-  Resolutions []IpResolution
-  DetectedUrls []DetectedUrl
+	Status
+	Resolutions  []IpResolution
+	DetectedUrls []DetectedUrl
 }
 
 // DomainResolution is defined by VT.
 type DomainResolution struct {
-  LastResolved string `json:"last_resolved"`
-  IpAddress string `json:"ip_address"`
+	LastResolved string `json:"last_resolved"`
+	IpAddress    string `json:"ip_address"`
 }
 
 // DomainReport is defined by VT.
 type DomainReport struct {
-  Status
-  Resolutions []DomainResolution
-  DetectedUrls []DetectedUrl
+	Status
+	Resolutions  []DomainResolution
+	DetectedUrls []DetectedUrl
 }
 
 // ClientError is a generic error specific to the `govt` package.
