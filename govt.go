@@ -48,8 +48,8 @@ type Report struct {
 	Permalink string          `json:"permalink"`
 }
 
-// RescanResult is defined by VT.
-type RescanResult struct {
+// RescanFileResult is defined by VT.
+type RescanFileResult struct {
 	Status
 	Resource  string `json:"resource"`
 	ScanId    string `json:"scan_id"`
@@ -57,8 +57,20 @@ type RescanResult struct {
 	Sha256    string `json:"sha256"`
 }
 
-// RescanResults is defined by VT.
-type RescanResults[]RescanResult
+// RescanFileResults is defined by VT.
+type RescanFileResults[]RescanFileResult
+
+// ScanUrlResult is defined by VT.
+type ScanUrlResult struct {
+  Status
+	ScanId    string `json:"scan_id"`
+	ScanDate    string `json:"scan_date"`
+	Permalink string `json:"permalink"`
+	Url    string `json:"url"`
+}
+
+// ScanUrlResults is defined by VT.
+type ScanUrlResults[]ScanUrlResult
 
 // ClientError is a generic error specific to the `govt` package.
 type ClientError struct {
@@ -86,7 +98,7 @@ func (self *Client) checkApiKey() (err error) {
 	}
 }
 
-// makeApiGetRequest fetches a URL with querystring via HTTP get and
+// makeApiGetRequest fetches a URL with querystring via HTTP GET and
 //  returns the response if the status code is HTTP 200
 // `parameters` should not include the apikey.
 // The caller must call `resp.Body.Close()`.
@@ -144,9 +156,55 @@ func (self *Client) makeApiPostRequest(fullurl string, parameters map[string]str
 	return resp, nil
 }
 
+// ScanUrl asks VT to redo analysis on the specified file.
+func (self *Client) ScanUrl(url string) (r *ScanUrlResult, err error) {
+	r = &ScanUrlResult{}
+
+  theurl := self.Url+"url/rescan?"
+  parameters := map[string]string{"url": url}
+	resp, err := self.makeApiPostRequest(theurl, parameters)
+	if err != nil {
+		return r, err
+	}
+  defer resp.Body.Close()
+
+	dec := json.NewDecoder(resp.Body)
+	if err = dec.Decode(r); err != nil {
+		return r, err
+	}
+
+	return r, nil
+}
+
+// ScanUrls asks VT to redo analysis on the specified files.
+func (self *Client) ScanUrls(urls[]string) (r *ScanUrlResults, err error) {
+	r = &ScanUrlResults{}
+
+  var allUrls bytes.Buffer
+  for _, url := range urls {
+    allUrls.WriteString(url)
+    allUrls.WriteString("\n")
+  }
+
+  url := self.Url+"file/rescan?"
+  parameters := map[string]string{"resource": allUrls.String()}
+	resp, err := self.makeApiPostRequest(url, parameters)
+	if err != nil {
+		return r, err
+	}
+  defer resp.Body.Close()
+
+	dec := json.NewDecoder(resp.Body)
+	if err = dec.Decode(r); err != nil {
+		return r, err
+	}
+
+	return r, nil
+}
+
 // RescanFile asks VT to redo analysis on the specified file.
-func (self *Client) RescanFile(md5 string) (r *RescanResult, err error) {
-	r = &RescanResult{}
+func (self *Client) RescanFile(md5 string) (r *RescanFileResult, err error) {
+	r = &RescanFileResult{}
 
   url := self.Url+"file/rescan?"
   parameters := map[string]string{"resource": md5}
@@ -165,8 +223,8 @@ func (self *Client) RescanFile(md5 string) (r *RescanResult, err error) {
 }
 
 // RescanFile asks VT to redo analysis on the specified files.
-func (self *Client) RescanFiles(md5s[]string) (r *RescanResults, err error) {
-	r = &RescanResults{}
+func (self *Client) RescanFiles(md5s[]string) (r *RescanFileResults, err error) {
+	r = &RescanFileResults{}
 
   var allMd5s bytes.Buffer
   for _, md5 := range md5s {

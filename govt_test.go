@@ -51,7 +51,7 @@ func TestRescanFile(t *testing.T) {
 	var testMd5 string = "eeb024f2c81f0d55936fb825d21a91d6"
 	report, err := govt.RescanFile(testMd5)
 	if err != nil {
-		t.Error("Error requesting report: ", err.Error())
+		t.Error("Error requesting rescan: ", err.Error())
     return
 	}
   if report.ResponseCode != 1 {
@@ -72,7 +72,51 @@ func TestRescanFiles(t *testing.T) {
 	testMd5s := []string{"eeb024f2c81f0d55936fb825d21a91d6", "eeb024f2c81f0d55936fb825d21a91d6"}
 	reports, err := govt.RescanFiles(testMd5s)
 	if err != nil {
-		t.Error("Error requesting report: ", err.Error())
+		t.Error("Error requesting rescan: ", err.Error())
+    return
+	}
+  for _, report := range *reports {
+    if report.ResponseCode != 1 {
+      t.Error("Response code indicates failure: %d", report.ResponseCode)
+      return
+    }
+  }
+}
+
+func TestScanUrl(t *testing.T) {
+	if apikey == "" {
+		t.Error("Unfortunately, you must edit the test case and provide your API key")
+    return
+	}
+
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
+
+	var testUrl string = "http://www.virustotal.com"
+	report, err := govt.RescanFile(testUrl)
+	if err != nil {
+		t.Error("Error requesting Scan: ", err.Error())
+    return
+	}
+  if report.ResponseCode != 1 {
+		t.Error("Response code indicates failure: %d", report.ResponseCode)
+    return
+  }
+}
+
+func TestScanUrls(t *testing.T) {
+	if apikey == "" {
+		t.Error("Unfortunately, you must edit the test case and provide your API key")
+    return
+	}
+
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
+
+	testUrls := []string{"http://www.virustotal.com", "http://www.google.com"}
+	reports, err := govt.ScanUrls(testUrls)
+	if err != nil {
+		t.Error("Error requesting scan: ", err.Error())
     return
 	}
   for _, report := range *reports {
