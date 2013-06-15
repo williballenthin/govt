@@ -13,7 +13,8 @@ import "testing"
 
 var apikey string = ""
 
-func TestGetReport(t *testing.T) {
+// TestGetFileReport tests the structure and execution of a request.
+func TestGetFileReport(t *testing.T) {
 	if apikey == "" {
 		t.Error("Unfortunately, you must edit the test case and provide your API key")
     return
@@ -23,7 +24,7 @@ func TestGetReport(t *testing.T) {
 	govt.UseDefaultUrl()
 
 	var testMd5 string = "eeb024f2c81f0d55936fb825d21a91d6"
-	report, err := govt.GetReport(testMd5)
+	report, err := govt.GetFileReport(testMd5)
 	if err != nil {
 		t.Error("Error requesting report: ", err.Error())
     return
@@ -39,6 +40,7 @@ func TestGetReport(t *testing.T) {
 	}
 }
 
+// TestRescanFile tests the structure and execution of a request.
 func TestRescanFile(t *testing.T) {
 	if apikey == "" {
 		t.Error("Unfortunately, you must edit the test case and provide your API key")
@@ -60,6 +62,7 @@ func TestRescanFile(t *testing.T) {
   }
 }
 
+// TestRescanFiles tests the structure and execution of a request.
 func TestRescanFiles(t *testing.T) {
 	if apikey == "" {
 		t.Error("Unfortunately, you must edit the test case and provide your API key")
@@ -83,6 +86,7 @@ func TestRescanFiles(t *testing.T) {
   }
 }
 
+// TestScanUrl tests the structure and execution of a request.
 func TestScanUrl(t *testing.T) {
 	if apikey == "" {
 		t.Error("Unfortunately, you must edit the test case and provide your API key")
@@ -104,6 +108,7 @@ func TestScanUrl(t *testing.T) {
   }
 }
 
+// TestScanUrls tests the structure and execution of a request.
 func TestScanUrls(t *testing.T) {
 	if apikey == "" {
 		t.Error("Unfortunately, you must edit the test case and provide your API key")
@@ -127,12 +132,99 @@ func TestScanUrls(t *testing.T) {
   }
 }
 
+// TestGetUrlReport tests the structure and execution of a request.
+func TestGetUrlReport(t *testing.T) {
+	if apikey == "" {
+		t.Error("Unfortunately, you must edit the test case and provide your API key")
+    return
+	}
 
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
 
+	var testUrl string = "http://www.virustotal.com"
+	report, err := govt.GetUrlReport(testUrl)
+	if err != nil {
+		t.Error("Error requesting report: ", err.Error())
+    return
+	}
+  if report.ResponseCode != 1 {
+		t.Error("Response code indicates failure: %d", report.ResponseCode)
+    return
+  }
 
+	if report.Url != testUrl {
+		t.Error("Requested URL does not match result: ", testUrl, " vs. ", report.Url)
+    return
+	}
+}
 
+// TestGetUrlReports tests the structure and execution of a request.
+func TestGetUrlReports(t *testing.T) {
+	if apikey == "" {
+		t.Error("Unfortunately, you must edit the test case and provide your API key")
+    return
+	}
 
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
 
+	var testUrls []string = []string{"http://www.virustotal.com", "http://www.google.com"}
+	reports, err := govt.GetUrlReports(testUrls)
+	if err != nil {
+		t.Error("Error requesting report: ", err.Error())
+    return
+	}
+  for _, report := range *reports {
+    if report.ResponseCode != 1 {
+      t.Error("Response code indicates failure: %d", report.ResponseCode)
+      return
+    }
+  }
+}
 
+// TestGetIpReport tests the structure and execution of a request.
+//   It does not perform logical tests on the returned data.
+func TestGetIpReport(t *testing.T) {
+	if apikey == "" {
+		t.Error("Unfortunately, you must edit the test case and provide your API key")
+    return
+	}
 
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
 
+	var testIp string = "8.8.8.8"
+	report, err := govt.GetIpReport(testIp)
+	if err != nil {
+		t.Error("Error requesting report: ", err.Error())
+    return
+	}
+  if report.ResponseCode != 1 {
+		t.Error("Response code indicates failure: %d", report.ResponseCode)
+    return
+  }
+}
+
+// TestGetDomainReport tests the structure and execution of a request.
+//   It does not perform logical tests on the returned data.
+func TestGetDomainReport(t *testing.T) {
+	if apikey == "" {
+		t.Error("Unfortunately, you must edit the test case and provide your API key")
+    return
+	}
+
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
+
+	var testDomain string = "www.virustotal.com"
+	report, err := govt.GetDomainReport(testDomain)
+	if err != nil {
+		t.Error("Error requesting report: ", err.Error())
+    return
+	}
+  if report.ResponseCode != 1 {
+		t.Error("Response code indicates failure: %d", report.ResponseCode)
+    return
+  }
+}
