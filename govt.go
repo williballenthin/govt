@@ -8,9 +8,7 @@ package govt
 
 import "os"
 import "fmt"
-
-//import "io/ioutil"
-import "bytes"
+import "strings"
 import "net/url"
 import "net/http"
 import "encoding/json"
@@ -173,15 +171,16 @@ func (self *Client) makeApiGetRequest(fullurl string, parameters map[string]stri
 		values.Add(k, v)
 	}
 
-  httpClient := http.Client{}
-  req, err := http.NewRequest("GET", fullurl + values.Encode(), nil)
-  if err != nil {
-    return resp, err
-  }
-  if self.BasicAuthUsername != "" {
-    req.SetBasicAuth(self.BasicAuthUsername, self.BasicAuthPassword)
-  }
-  resp, err = httpClient.Do(req)
+	httpClient := http.Client{}
+	// TODO(wb) check if final character is ?, or if ? already exists
+	req, err := http.NewRequest("GET", fullurl+"?"+values.Encode(), nil)
+	if err != nil {
+		return resp, err
+	}
+	if self.BasicAuthUsername != "" {
+		req.SetBasicAuth(self.BasicAuthUsername, self.BasicAuthPassword)
+	}
+	resp, err = httpClient.Do(req)
 	if err != nil {
 		return resp, err
 	}
@@ -224,225 +223,107 @@ func (self *Client) makeApiPostRequest(fullurl string, parameters map[string]str
 	return resp, nil
 }
 
-// ScanUrl asks VT to redo analysis on the specified file.
-func (self *Client) ScanUrl(url string) (r *ScanUrlResult, err error) {
-	r = &ScanUrlResult{}
+type Parameters map[string]string
 
-	theurl := self.Url + "url/rescan"
-	parameters := map[string]string{"url": url}
-	resp, err := self.makeApiPostRequest(theurl, parameters)
+// fetchApiJson makes a request to the API and decodes the response.
+// `method` is one of "GET", "POST"
+// `actionurl` is the final path component that specifies the API call
+// `parameters` does not include the API key
+// `result` is modified as an output parameter. It must be a pointer to a VT JSON structure.
+func (self *Client) fetchApiJson(method string, actionurl string, parameters Parameters, result interface{}) (err error) {
+	theurl := self.Url + actionurl
+	var resp *http.Response
+	switch method {
+	case "GET":
+		resp, err = self.makeApiGetRequest(theurl, parameters)
+	case "POST":
+		resp, err = self.makeApiPostRequest(theurl, parameters)
+	}
 	if err != nil {
-		return r, err
+		return err
 	}
 	defer resp.Body.Close()
 
 	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(r); err != nil {
-		return r, err
+	if err = dec.Decode(result); err != nil {
+		return err
 	}
 
-	return r, nil
+	return nil
+}
+
+// ScanUrl asks VT to redo analysis on the specified file.
+func (self *Client) ScanUrl(url string) (r *ScanUrlResult, err error) {
+	r = &ScanUrlResult{}
+	err = self.fetchApiJson("POST", "url/rescan", Parameters{"url": url}, r)
+	return r, err
 }
 
 // ScanUrls asks VT to redo analysis on the specified files.
 func (self *Client) ScanUrls(urls []string) (r *ScanUrlResults, err error) {
 	r = &ScanUrlResults{}
-
-	var allUrls bytes.Buffer
-	for _, url := range urls {
-		allUrls.WriteString(url)
-		allUrls.WriteString("\n")
-	}
-
-	url := self.Url + "file/rescan"
-	parameters := map[string]string{"resource": allUrls.String()}
-	resp, err := self.makeApiPostRequest(url, parameters)
-	if err != nil {
-		return r, err
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(r); err != nil {
-		return r, err
-	}
-
-	return r, nil
+	parameters := Parameters{"resource": strings.Join(urls, "\n")}
+	err = self.fetchApiJson("POST", "url/rescan", parameters, r)
+	return r, err
 }
 
 // RescanFile asks VT to redo analysis on the specified file.
 func (self *Client) RescanFile(md5 string) (r *RescanFileResult, err error) {
 	r = &RescanFileResult{}
-
-	url := self.Url + "file/rescan"
-	parameters := map[string]string{"resource": md5}
-	resp, err := self.makeApiPostRequest(url, parameters)
-	if err != nil {
-		return r, err
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(r); err != nil {
-		return r, err
-	}
-
-	return r, nil
+	err = self.fetchApiJson("POST", "file/rescan", Parameters{"resource": md5}, r)
+	return r, err
 }
 
 // RescanFile asks VT to redo analysis on the specified files.
 func (self *Client) RescanFiles(md5s []string) (r *RescanFileResults, err error) {
 	r = &RescanFileResults{}
-
-	var allMd5s bytes.Buffer
-	for _, md5 := range md5s {
-		allMd5s.WriteString(md5)
-		allMd5s.WriteString(",")
-	}
-
-	url := self.Url + "file/rescan"
-	parameters := map[string]string{"resource": allMd5s.String()}
-	resp, err := self.makeApiPostRequest(url, parameters)
-	if err != nil {
-		return r, err
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(r); err != nil {
-		return r, err
-	}
-
-	return r, nil
+	parameters := Parameters{"resource": strings.Join(md5s, ",")}
+	err = self.fetchApiJson("POST", "file/rescan", parameters, r)
+	return r, err
 }
 
 // GetFileReport fetches the AV scan reports tracked by VT given an MD5 hash value.
 func (self *Client) GetFileReport(md5 string) (r *FileReport, err error) {
 	r = &FileReport{}
-
-	url := self.Url + "file/report?"
-	parameters := map[string]string{"resource": md5}
-	resp, err := self.makeApiGetRequest(url, parameters)
-	if err != nil {
-		return r, err
-	}
-	defer resp.Body.Close()
-
-	//  buf, err := ioutil.ReadAll(resp.Body)
-	//  os.Stdout.Write(buf)
-
-	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(r); err != nil {
-		return r, err
-	}
-
-	return r, nil
+	err = self.fetchApiJson("GET", "file/report", Parameters{"resource": md5}, r)
+	return r, err
 }
 
 // GetUrlReport fetches the AV scan reports tracked by VT given a URL.
 // Does not support the optional `scan` parameter.
 func (self *Client) GetUrlReport(url string) (r *UrlReport, err error) {
 	r = &UrlReport{}
-
-	theurl := self.Url + "url/report"
-	parameters := map[string]string{"resource": url}
-	resp, err := self.makeApiPostRequest(theurl, parameters)
-	if err != nil {
-		return r, err
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(r); err != nil {
-		return r, err
-	}
-
-	return r, nil
+	err = self.fetchApiJson("POST", "url/report", Parameters{"resource": url}, r)
+	return r, err
 }
 
 // GetUrlReports fetches AV scan reports tracked by VT given URLs.
 // Does not support the optional `scan` parameter.
 func (self *Client) GetUrlReports(urls []string) (r *UrlReports, err error) {
 	r = &UrlReports{}
-
-	var allUrls bytes.Buffer
-	for _, url := range urls {
-		allUrls.WriteString(url)
-		allUrls.WriteString(", ")
-	}
-
-	theurl := self.Url + "url/report"
-	parameters := map[string]string{"resource": allUrls.String()}
-	resp, err := self.makeApiPostRequest(theurl, parameters)
-	if err != nil {
-		return r, err
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(r); err != nil {
-		return r, err
-	}
-
-	return r, nil
+	parameters := Parameters{"resource": strings.Join(urls, ", ")}
+	err = self.fetchApiJson("POST", "url/report", parameters, r)
+	return r, err
 }
 
 // GetIpReport fetches the passive DNS information about an IP address.
 func (self *Client) GetIpReport(ip string) (r *IpReport, err error) {
 	r = &IpReport{}
-
-	url := self.Url + "ip-address/report?"
-	parameters := map[string]string{"ip": ip}
-	resp, err := self.makeApiGetRequest(url, parameters)
-	if err != nil {
-		return r, err
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(r); err != nil {
-		return r, err
-	}
-
-	return r, nil
+	err = self.fetchApiJson("GET", "ip-address/report", Parameters{"ip": ip}, r)
+	return r, err
 }
 
 // GetDomainReport fetches the passive DNS information about a DNS address.
 func (self *Client) GetDomainReport(domain string) (r *DomainReport, err error) {
 	r = &DomainReport{}
-
-	url := self.Url + "domain/report?"
-	parameters := map[string]string{"domain": domain}
-	resp, err := self.makeApiGetRequest(url, parameters)
-	if err != nil {
-		return r, err
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(r); err != nil {
-		return r, err
-	}
-
-	return r, nil
+	err = self.fetchApiJson("GET", "domain/report", Parameters{"domain": domain}, r)
+	return r, err
 }
 
 // MakeComment adds a comment to a file/URL/IP/domain.
-func (self *Client) MakeComment(resource string, comment string) (status *Status, err error) {
-	status = &Status{}
-
-	url := self.Url + "comments/put"
-	parameters := map[string]string{"resource": resource, "comment": comment}
-	resp, err := self.makeApiPostRequest(url, parameters)
-	if err != nil {
-		return status, err
-	}
-	defer resp.Body.Close()
-
-	dec := json.NewDecoder(resp.Body)
-	if err = dec.Decode(status); err != nil {
-		return status, err
-	}
-
-	return status, nil
+func (self *Client) MakeComment(resource string, comment string) (r *Status, err error) {
+	r = &Status{}
+	parameters := Parameters{"resource": resource, "comment": comment}
+	err = self.fetchApiJson("POST", "comments/put", parameters, r)
+	return r, err
 }
