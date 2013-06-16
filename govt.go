@@ -1,5 +1,5 @@
 /*
-govt is a VirusTotal API v2 client written for Google Go.
+govt is a VirusTotal API v2 client written for the Go programming language.
 
 Written by Willi Ballenthin while at Mandiant.
 June, 2013.
@@ -8,6 +8,8 @@ package govt
 
 import "os"
 import "fmt"
+
+//import "io/ioutil"
 import "bytes"
 import "net/url"
 import "net/http"
@@ -15,8 +17,10 @@ import "encoding/json"
 
 // Client interacts with the services provided by VirusTotal.
 type Client struct {
-	Apikey string // private API key
-	Url    string // VT URL, probably ends with .../v2/. Must end in '/'.
+	Apikey            string // private API key
+	Url               string // VT URL, probably ends with .../v2/. Must end in '/'.
+	BasicAuthUsername string // Optional username for BasicAuth on VT proxy.
+	BasicAuthPassword string // Optional password for BasicAuth on VT proxy.
 }
 
 // Status is the set of fields shared among all VT responses.
@@ -169,7 +173,15 @@ func (self *Client) makeApiGetRequest(fullurl string, parameters map[string]stri
 		values.Add(k, v)
 	}
 
-	resp, err = http.Get(fullurl + values.Encode())
+  httpClient := http.Client{}
+  req, err := http.NewRequest("GET", fullurl + values.Encode(), nil)
+  if err != nil {
+    return resp, err
+  }
+  if self.BasicAuthUsername != "" {
+    req.SetBasicAuth(self.BasicAuthUsername, self.BasicAuthPassword)
+  }
+  resp, err = httpClient.Do(req)
 	if err != nil {
 		return resp, err
 	}
@@ -315,6 +327,9 @@ func (self *Client) GetFileReport(md5 string) (r *FileReport, err error) {
 		return r, err
 	}
 	defer resp.Body.Close()
+
+	//  buf, err := ioutil.ReadAll(resp.Body)
+	//  os.Stdout.Write(buf)
 
 	dec := json.NewDecoder(resp.Body)
 	if err = dec.Decode(r); err != nil {
