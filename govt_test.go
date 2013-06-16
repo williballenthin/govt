@@ -17,7 +17,7 @@ var apikey string = ""
 func TestGetFileReport(t *testing.T) {
 	if apikey == "" {
 		t.Error("Unfortunately, you must edit the test case and provide your API key")
-    return
+		return
 	}
 
 	govt := Client{Apikey: apikey}
@@ -27,16 +27,16 @@ func TestGetFileReport(t *testing.T) {
 	report, err := govt.GetFileReport(testMd5)
 	if err != nil {
 		t.Error("Error requesting report: ", err.Error())
-    return
+		return
 	}
-  if report.ResponseCode != 1 {
+	if report.ResponseCode != 1 {
 		t.Error("Response code indicates failure: %d", report.ResponseCode)
-    return
-  }
+		return
+	}
 
 	if report.Md5 != testMd5 {
 		t.Error("Requested MD5 does not match result: ", testMd5, " vs. ", report.Md5)
-    return
+		return
 	}
 }
 
@@ -44,7 +44,7 @@ func TestGetFileReport(t *testing.T) {
 func TestRescanFile(t *testing.T) {
 	if apikey == "" {
 		t.Error("Unfortunately, you must edit the test case and provide your API key")
-    return
+		return
 	}
 
 	govt := Client{Apikey: apikey}
@@ -54,13 +54,16 @@ func TestRescanFile(t *testing.T) {
 	report, err := govt.RescanFile(testMd5)
 	if err != nil {
 		t.Error("Error requesting rescan: ", err.Error())
-    return
+		return
 	}
-  if report.ResponseCode != 1 {
+	if report.ResponseCode != 1 {
 		t.Error("Response code indicates failure: %d", report.ResponseCode)
-    return
-  }
+		return
+	}
 }
+
+/* unless you have a high API quota, I recommend not executing the full test suite,
+ *  as you'll quickly blow through you're allotment
 
 // TestRescanFiles tests the structure and execution of a request.
 func TestRescanFiles(t *testing.T) {
@@ -228,3 +231,4 @@ func TestGetDomainReport(t *testing.T) {
     return
   }
 }
+*/
