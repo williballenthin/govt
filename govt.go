@@ -50,6 +50,17 @@ type FileReport struct {
 	Permalink string              `json:"permalink"`
 }
 
+// ScanFileResult is defined by VT.
+type ScanFileResult struct {
+	Status
+	Resource string `json:"resource"`
+	ScanId   string `json:scan_id`
+	Permalink string `json:permalink`
+	Sha256    string `json:sha256`
+	Sha1      string `json:sha1`
+	Md5       string `json:md5`
+}
+
 // RescanFileResult is defined by VT.
 type RescanFileResult struct {
 	Status
@@ -264,6 +275,16 @@ func (self *Client) ScanUrls(urls []string) (r *ScanUrlResults, err error) {
 	r = &ScanUrlResults{}
 	parameters := Parameters{"resource": strings.Join(urls, "\n")}
 	err = self.fetchApiJson("POST", "url/scan", parameters, r)
+	return r, err
+}
+
+// ScanFile asks VT to analysis on the specified file, thats also uploaded.
+// TODO(scusi) - define 'ScanFileRequest'.
+// TODO(scusi) - check if (and how) we can use 'fetchApiJson' or 
+//  if we have to implement our own replacment function in order to be able to upload files.
+func (self *Client) ScanFile(file string) (r *ScanFileResult, err error) {
+	r = &ScanFileResult{}
+	err = self.fetchApiJson("POST", "file/rescan", Parameters{"file": file}, r)
 	return r, err
 }
 
