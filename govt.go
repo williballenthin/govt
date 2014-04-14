@@ -279,7 +279,6 @@ func (self *Client) ScanUrls(urls []string) (r *ScanUrlResults, err error) {
 }
 
 // ScanFile asks VT to analysis on the specified file, thats also uploaded.
-// TODO(scusi) - define 'ScanFileRequest'.
 // TODO(scusi) - check if (and how) we can use 'fetchApiJson' or 
 //  if we have to implement our own replacment function in order to be able to upload files.
 func (self *Client) ScanFile(file string) (r *ScanFileResult, err error) {
