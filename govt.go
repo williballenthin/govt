@@ -274,7 +274,7 @@ func (self *Client) RescanFile(md5 string) (r *RescanFileResult, err error) {
 	return r, err
 }
 
-// RescanFile asks VT to redo analysis on the specified files.
+// RescanFiles asks VT to redo analysis on the specified files.
 func (self *Client) RescanFiles(md5s []string) (r *RescanFileResults, err error) {
 	r = &RescanFileResults{}
 	parameters := Parameters{"resource": strings.Join(md5s, ",")}
