@@ -255,7 +255,7 @@ func (self *Client) fetchApiJson(method string, actionurl string, parameters Par
 // ScanUrl asks VT to redo analysis on the specified file.
 func (self *Client) ScanUrl(url string) (r *ScanUrlResult, err error) {
 	r = &ScanUrlResult{}
-	err = self.fetchApiJson("POST", "url/rescan", Parameters{"url": url}, r)
+	err = self.fetchApiJson("POST", "url/scan", Parameters{"url": url}, r)
 	return r, err
 }
 
@@ -263,7 +263,7 @@ func (self *Client) ScanUrl(url string) (r *ScanUrlResult, err error) {
 func (self *Client) ScanUrls(urls []string) (r *ScanUrlResults, err error) {
 	r = &ScanUrlResults{}
 	parameters := Parameters{"resource": strings.Join(urls, "\n")}
-	err = self.fetchApiJson("POST", "url/rescan", parameters, r)
+	err = self.fetchApiJson("POST", "url/scan", parameters, r)
 	return r, err
 }
 
