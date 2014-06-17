@@ -50,6 +50,9 @@ type FileReport struct {
 	Permalink string              `json:"permalink"`
 }
 
+// FileReportResults is defined by VT.
+type FileReportResults []FileReport
+
 // RescanFileResult is defined by VT.
 type RescanFileResult struct {
 	Status
@@ -286,6 +289,14 @@ func (self *Client) RescanFiles(md5s []string) (r *RescanFileResults, err error)
 func (self *Client) GetFileReport(md5 string) (r *FileReport, err error) {
 	r = &FileReport{}
 	err = self.fetchApiJson("GET", "file/report", Parameters{"resource": md5}, r)
+	return r, err
+}
+
+// GetFileReports fetches the AV scan reports tracked by VT given set of MD5 hash values.
+func (self *Client) GetFileReports(md5s []string) (r *FileReportResults, err error) {
+	r = &FileReportResults{}
+	parameters := Parameters{"resource": strings.Join(md5s, ",")}
+	err = self.fetchApiJson("GET", "file/report", parameters, r)
 	return r, err
 }
 
