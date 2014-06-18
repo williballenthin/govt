@@ -40,6 +40,32 @@ func TestGetFileReport(t *testing.T) {
 	}
 }
 
+// TestGetFileReports tests the structure and execution of a request.
+func TestGetFileReports(t *testing.T) {
+	if apikey == "" {
+		t.Error("Unfortunately, you must edit the test case and provide your API key")
+		return
+	}
+
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
+
+	md5s := []string {"eeb024f2c81f0d55936fb825d21a91d6", "1F4C43ADFD45381CFDAD1FAFEA16B808"}
+	reports, err := govt.GetFileReports(md5s)
+	if err != nil {
+		t.Error("Error requesting reports: ", err.Error())
+		return
+	}
+
+	for _, r := range *reports {
+		if r.ResponseCode != 1 {
+			t.Error("Response code indicates failure: %d", r.ResponseCode)
+			return
+		}
+
+	}
+}
+
 // TestRescanFile tests the structure and execution of a request.
 func TestRescanFile(t *testing.T) {
 	if apikey == "" {
