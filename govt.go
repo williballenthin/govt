@@ -6,19 +6,24 @@ June, 2013.
 
 File upload capabilities by Florian 'scusi' Walther
 June, 2014.
+
+File distribution support by Christopher 'tankbusta' Schmitt while at Mandiant
+October, 2014.
 */
 package govt
 
-import "io"
-import "os"
-import "fmt"
-import "bytes"
-import "strings"
-import "net/url"
-import "net/http"
-import "encoding/json"
-import "path/filepath"
-import "mime/multipart"
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"mime/multipart"
+	"net/http"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+)
 
 // Client interacts with the services provided by VirusTotal.
 type Client struct {
@@ -42,6 +47,26 @@ type FileScan struct {
 	Update   string `json:"update"`
 }
 
+type FileReportDistrib struct {
+	Md5           string `json:"md5"`
+	Sha1          string `json:"sha1"`
+	Sha256        string `json:"sha256"`
+	Type          string `json:"type"`
+	FirstSeen     string `json:"first_seen"`
+	LastSeen      string `json:"last_seen"`
+	Link          string `json:"link"`
+	Name          string `json:"name"`
+	Size          int    `json:"size"`
+	SourceCountry string `json:"source_country"`
+	SourceId      string `json:"source_id"`
+	Timestamp     int    `json:"timestamp"`
+	VHash         string `json:"vhash"`
+	// Ugh. VT inconsistency. Data is an array rather than k/v like other APIs
+	Scans map[string][]string `json:"report"`
+}
+
+type FileDistributionResults []FileReportDistrib
+
 // FileReport is defined by VT.
 type FileReport struct {
 	Status
@@ -60,12 +85,12 @@ type FileReport struct {
 // ScanFileResult is defined by VT.
 type ScanFileResult struct {
 	Status
-	Resource string `json:"resource"`
-	ScanId   string `json:scan_id`
-	Permalink string `json:permalink`
-	Sha256    string `json:sha256`
-	Sha1      string `json:sha1`
-	Md5       string `json:md5`
+	Resource  string `json:"resource"`
+	ScanId    string `json:"scan_id"`
+	Permalink string `json:"permalink"`
+	Sha256    string `json:"sha256"`
+	Sha1      string `json:"sha1"`
+	Md5       string `json:"md5"`
 }
 
 // FileReportResults is defined by VT.
@@ -198,9 +223,11 @@ func (self *Client) makeApiGetRequest(fullurl string, parameters map[string]stri
 	if err != nil {
 		return resp, err
 	}
+
 	if self.BasicAuthUsername != "" {
 		req.SetBasicAuth(self.BasicAuthUsername, self.BasicAuthPassword)
 	}
+
 	resp, err = httpClient.Do(req)
 	if err != nil {
 		return resp, err
@@ -249,60 +276,60 @@ func (self *Client) makeApiPostRequest(fullurl string, parameters map[string]str
 // `parameters` should not include the apikey.
 // The caller must call `resp.Body.Close()`.
 func (self *Client) makeApiUploadRequest(fullurl string, parameters map[string]string, paramName, path string) (resp *http.Response, err error) {
-    // open the file
-    file, err := os.Open(path)
-    if err != nil {
-        return nil, err
-    }
-    defer file.Close()
+	// open the file
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
 
-    // prepare and create a multipart/mime body
-    // create a buffer to hold the body of our HTTP Request
-    body := &bytes.Buffer{}
-    // create a multipat/mime writer
-    writer := multipart.NewWriter(body)
-    // get the Content-Type of our form data
-    fdct := writer.FormDataContentType()
-    // create a part for our file
-    part, err := writer.CreateFormFile(paramName, filepath.Base(path))
-    if err != nil {
-        return nil, err
-    }
-    // copy our file into the file part of our multipart/mime message
-    _, err = io.Copy(part, file)
-    // set Apikey as parameter
+	// prepare and create a multipart/mime body
+	// create a buffer to hold the body of our HTTP Request
+	body := &bytes.Buffer{}
+	// create a multipat/mime writer
+	writer := multipart.NewWriter(body)
+	// get the Content-Type of our form data
+	fdct := writer.FormDataContentType()
+	// create a part for our file
+	part, err := writer.CreateFormFile(paramName, filepath.Base(path))
+	if err != nil {
+		return nil, err
+	}
+	// copy our file into the file part of our multipart/mime message
+	_, err = io.Copy(part, file)
+	// set Apikey as parameter
 	parameters["apikey"] = self.Apikey
-    // write parameters into the request
-    for key, val := range parameters {
-        _ = writer.WriteField(key, val)
-    }
-    err = writer.Close()
-    if err != nil {
-        return nil, err
-    }
-    // create a HTTP request with our body, that contains our file
-    postReq, err := http.NewRequest("POST", fullurl, body)
+	// write parameters into the request
+	for key, val := range parameters {
+		_ = writer.WriteField(key, val)
+	}
+	err = writer.Close()
+	if err != nil {
+		return nil, err
+	}
+	// create a HTTP request with our body, that contains our file
+	postReq, err := http.NewRequest("POST", fullurl, body)
 	if err != nil {
 		return resp, err
 	}
-    // add the Content-Type we got earlier to the request header.
-    //  some implementations fail if this is not present. (malwr.com, virustotal.com, probably others too)
-    //  this could also be a bug in go actually.
-    postReq.Header.Add("Content-Type", fdct)
-    // prepare http client
-    client := &http.Client{}
-    // send our request off, get response and/or error
-    resp, err = client.Do(postReq)
+	// add the Content-Type we got earlier to the request header.
+	//  some implementations fail if this is not present. (malwr.com, virustotal.com, probably others too)
+	//  this could also be a bug in go actually.
+	postReq.Header.Add("Content-Type", fdct)
+	// prepare http client
+	client := &http.Client{}
+	// send our request off, get response and/or error
+	resp, err = client.Do(postReq)
 	if err != nil {
 		return resp, err
 	}
-    // oops something went wrong
+	// oops something went wrong
 	if resp.StatusCode != 200 {
 		var msg string = fmt.Sprintf("Unexpected status code: %d", resp.StatusCode)
 		resp.Write(os.Stdout)
 		return resp, ClientError{msg: msg}
 	}
-    // we made it, let's return
+	// we made it, let's return
 	return resp, nil
 }
 
@@ -321,11 +348,11 @@ func (self *Client) fetchApiJson(method string, actionurl string, parameters Par
 		resp, err = self.makeApiGetRequest(theurl, parameters)
 	case "POST":
 		resp, err = self.makeApiPostRequest(theurl, parameters)
-    case "FILE":
-        // get the path to our file from parameters["filename"]
-        path := parameters["filename"]
-        // call makeApiUploadRequest with fresh/empty Parameters
-        resp, err = self.makeApiUploadRequest(theurl, Parameters{}, "file", path)
+	case "FILE":
+		// get the path to our file from parameters["filename"]
+		path := parameters["filename"]
+		// call makeApiUploadRequest with fresh/empty Parameters
+		resp, err = self.makeApiUploadRequest(theurl, Parameters{}, "file", path)
 	}
 	if err != nil {
 		return err
@@ -358,13 +385,13 @@ func (self *Client) ScanUrls(urls []string) (r *ScanUrlResults, err error) {
 // ScanFile asks VT to analysis on the specified file, thats also uploaded.
 func (self *Client) ScanFile(file string) (r *ScanFileResult, err error) {
 	r = &ScanFileResult{}
-    // HACK: here i misuse fetchApiJson a bit,
-    //  introduced a new "method" called 'File', 
-    //  which will make fetchApiJson to invoke makeApiUploadRequest 
-    //  instead of makeApiPostRequest.
-    //  
-    //  i use Parameters map to pass the filename to fetchApiJson, which
-    //  in turn drops the map and calls makeApiUploadRequest with a fresh one
+	// HACK: here i misuse fetchApiJson a bit,
+	//  introduced a new "method" called 'File',
+	//  which will make fetchApiJson to invoke makeApiUploadRequest
+	//  instead of makeApiPostRequest.
+	//
+	//  i use Parameters map to pass the filename to fetchApiJson, which
+	//  in turn drops the map and calls makeApiUploadRequest with a fresh one
 	err = self.fetchApiJson("FILE", "file/scan", Parameters{"filename": file}, r)
 	return r, err
 }
@@ -396,6 +423,13 @@ func (self *Client) GetFileReports(md5s []string) (r *FileReportResults, err err
 	r = &FileReportResults{}
 	parameters := Parameters{"resource": strings.Join(md5s, ",")}
 	err = self.fetchApiJson("GET", "file/report", parameters, r)
+	return r, err
+}
+
+// GetFileDistribution fetches files from the VT distribution API
+func (self *Client) GetFileDistribution(params *Parameters) (r *FileDistributionResults, err error) {
+	r = &FileDistributionResults{}
+	err = self.fetchApiJson("GET", "file/distribution", *params, r)
 	return r, err
 }
 
