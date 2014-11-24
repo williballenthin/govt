@@ -160,7 +160,7 @@ type DetectedUrl struct {
 type IpReport struct {
 	Status
 	Resolutions  []IpResolution
-	DetectedUrls []DetectedUrl
+	DetectedUrls []DetectedUrl `json:"detected_urls"`
 }
 
 // DomainResolution is defined by VT.
@@ -173,7 +173,7 @@ type DomainResolution struct {
 type DomainReport struct {
 	Status
 	Resolutions  []DomainResolution
-	DetectedUrls []DetectedUrl
+	DetectedUrls []DetectedUrl `json:"detected_urls"`
 }
 
 // ClientError is a generic error specific to the `govt` package.
