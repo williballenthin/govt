@@ -132,6 +132,7 @@ type UrlReport struct {
 	ScanDate   string             `json:"scan_date"`
 	Permalink  string             `json:"permalink"`
 	Positives  uint16             `json:"positives"`
+        Total      uint16              `json:"total"`
 	Scans      map[string]UrlScan `json:"scans"`
 	FileScanId string             `json:"filescan_id"`
 }
@@ -445,7 +446,7 @@ func (self *Client) GetUrlReport(url string) (r *UrlReport, err error) {
 // Does not support the optional `scan` parameter.
 func (self *Client) GetUrlReports(urls []string) (r *UrlReports, err error) {
 	r = &UrlReports{}
-	parameters := Parameters{"resource": strings.Join(urls, ", ")}
+	parameters := Parameters{"resource": strings.Join(urls, "\n")}
 	err = self.fetchApiJson("POST", "url/report", parameters, r)
 	return r, err
 }
