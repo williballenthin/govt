@@ -458,6 +458,14 @@ func (self *Client) GetFile(hash string) (r *FileDownloadResult, err error) {
 	return r, err
 }
 
+func (self *Client) GetFileNetworkTraffic(hash string) (r *FileDownloadResult, err error) {
+	r = &FileDownloadResult{}
+	parameters := Parameters{"hash": hash}
+	data, err := self.fetchApiFile("file/network-traffic", parameters)
+	r.Content = data
+	return r, err
+}
+
 // GetFileDistribution fetches files from the VT distribution API
 func (self *Client) GetFileDistribution(params *Parameters) (r *FileDistributionResults, err error) {
 	r = &FileDistributionResults{}
