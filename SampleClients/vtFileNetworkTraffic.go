@@ -9,9 +9,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	//"github.com/williballenthin/govt"
+	"github.com/williballenthin/govt"
 	"flag"
-	"github.com/scusi/govt"
+	//"github.com/scusi/govt"
 	"io/ioutil"
 	"os"
 )
