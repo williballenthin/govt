@@ -17,6 +17,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -37,6 +38,11 @@ type Client struct {
 type Status struct {
 	ResponseCode int    `json:"response_code"`
 	VerboseMsg   string `json:"verbose_msg"`
+}
+
+// FileResult 
+type FileDownloadResult struct {
+	Content	[]byte
 }
 
 // FileScan is defined by VT.
@@ -368,6 +374,22 @@ func (self *Client) fetchApiJson(method string, actionurl string, parameters Par
 	return nil
 }
 
+// fetchApiFile makes a get request to the API and returns the file content
+func (self *Client) fetchApiFile(actionurl string, parameters Parameters) (data []byte, err error) {
+    theurl := self.Url + actionurl
+	var resp *http.Response
+	resp, err = self.makeApiGetRequest(theurl, parameters)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	data, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+}
+
 // ScanUrl asks VT to redo analysis on the specified file.
 func (self *Client) ScanUrl(url string) (r *ScanUrlResult, err error) {
 	r = &ScanUrlResult{}
@@ -424,6 +446,23 @@ func (self *Client) GetFileReports(md5s []string) (r *FileReportResults, err err
 	r = &FileReportResults{}
 	parameters := Parameters{"resource": strings.Join(md5s, ",")}
 	err = self.fetchApiJson("GET", "file/report", parameters, r)
+	return r, err
+}
+
+// GetFile fetches a file from VT that matches a given md5/sha1/sha256 sum
+func (self *Client) GetFile(hash string) (r *FileDownloadResult, err error) {
+	r = &FileDownloadResult{}
+	parameters := Parameters{"hash": hash}
+	data, err := self.fetchApiFile("file/download", parameters)
+	r.Content = data
+	return r, err
+}
+
+func (self *Client) GetFileNetworkTraffic(hash string) (r *FileDownloadResult, err error) {
+	r = &FileDownloadResult{}
+	parameters := Parameters{"hash": hash}
+	data, err := self.fetchApiFile("file/network-traffic", parameters)
+	r.Content = data
 	return r, err
 }
 
