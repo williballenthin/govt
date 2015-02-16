@@ -11,7 +11,7 @@ Therefore you have to export VT_API_KEY before useing any of the provided exampl
 ## Overview
 
 * vtDomainReport.go - fetches a domain report for a given domain
-* vtFileCheck.go - checks if a given resource if known by VT (without uploading a given sample)
+* vtFileCheck.go - checks if a given resource is known by VT (without uploading a given sample)
 * vtFileDownload.go - downloads a sample from VT (needs private API Key)
 * vtFileNetworkTraffic.go - downloads pcap from VT for a given resource
 * vtFileKnownBySymantec.go - checks if a given resource is detected by a certain AV , Symantec is used in this example
