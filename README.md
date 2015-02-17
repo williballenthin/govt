@@ -1,7 +1,7 @@
-govt
-====
+govt - VirusTotal API for Go
+============================
 
-Virustotal API for Go
+`govt` is a go module to use the API of VirusTotal.com.
 
 Implemented Features
 ====================
@@ -31,5 +31,25 @@ Implemented Features
 Missing Features
 ================
 
-- apikey has currently to be put into the source (get the apikey from a file would be better)
+- all of the above with a `false` in the `govt support` column.
+- at least for testing the VT apikey has currently be put into the source (get the apikey from a file or an environment variable would be better)
 - more and better testing
+
+Install
+=======
+
+If you have a go workplace setup and working you can simply do:
+
+ go get github.com/williballenthin/govt
+ go install github.com/williballenthin/govt
+
+Usage
+=====
+
+In order how to use the `govt` module please have a look at the `SampleClients` directory and it's content.
+
+You need to have an VirusTotal API Key. You can register for an account at VirusTotal in order to get an public API key.
+There are also private API keys available, for those you have to be accepted by VirusTotal and you need to pay for.
+Depending on your API Key and the access level granted you can use all of the above functions, all but the ones reserved for AV companies, or just the public ones (if you have a free publich API key).
+
+Check out the `README.md` file in the `SampleClients` directory in order to find out how to set-up your API key in order to use the provided Example programs.
