@@ -41,6 +41,7 @@ Install
 If you have a go workplace setup and working you can simply do:
 
  go get github.com/williballenthin/govt
+
  go install github.com/williballenthin/govt
 
 Usage
