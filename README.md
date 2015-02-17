@@ -1,7 +1,9 @@
 govt - VirusTotal API for Go
 ============================
 
-`govt` is a go module to use the API of VirusTotal.com.
+`govt` is a go module to use the [API](https://www.virustotal.com/documentation/public-api/) of [VirusTotal.com](https://www.virustotal.com/).
+
+`govt` was initially written by `Willi Ballenthin` and later enhanced by `Christopher 'tankbusta' Schmitt` and `Florian 'scusi' Walther`
 
 Implemented Features
 ====================
