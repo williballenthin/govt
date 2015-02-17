@@ -53,4 +53,4 @@ You need to have an VirusTotal API Key. You can register for an account at Virus
 There are also private API keys available, for those you have to be accepted by VirusTotal and you need to pay for.
 Depending on your API Key and the access level granted you can use all of the above functions, all but the ones reserved for AV companies, or just the public ones (if you have a free publich API key).
 
-Check out the [README.md](https://github.com/williballenthin/govt/blob/master/SampleClients/README.md) file in the `SampleClients` directory in order to find out how to set-up your API key in order to use the provided Example programs.
+Check out the [README.md](https://github.com/williballenthin/govt/blob/master/SampleClients/README.md) file in the `SampleClients` directory to find out how to set-up your API key in order to use the provided Example programs.
