@@ -13,25 +13,33 @@ October, 2014.
 package govt
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"mime/multipart"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
 )
 
+const (
+	DefaultURL = "https://www.virustotal.com/vtapi/v2/"
+)
+
 // Client interacts with the services provided by VirusTotal.
 type Client struct {
-	Apikey            string // private API key
-	Url               string // VT URL, probably ends with .../v2/. Must end in '/'.
-	BasicAuthUsername string // Optional username for BasicAuth on VT proxy.
-	BasicAuthPassword string // Optional password for BasicAuth on VT proxy.
+	apikey            string       // private API key
+	url               string       // VT URL, probably ends with .../v2/. Must end in '/'.
+	basicAuthUsername string       // Optional username for BasicAuth on VT proxy.
+	basicAuthPassword string       // Optional password for BasicAuth on VT proxy.
+	errorlog          *log.Logger  // Optional logger to write errors to
+	tracelog          *log.Logger  // Optional logger to write trace and debug data to
+	c                 *http.Client // The client to use for requests
 }
 
 // Status is the set of fields shared among all VT responses.
@@ -40,9 +48,9 @@ type Status struct {
 	VerboseMsg   string `json:"verbose_msg"`
 }
 
-// FileResult 
+// FileResult
 type FileDownloadResult struct {
-	Content	[]byte
+	Content []byte
 }
 
 // FileScan is defined by VT.
@@ -138,7 +146,7 @@ type UrlReport struct {
 	ScanDate   string             `json:"scan_date"`
 	Permalink  string             `json:"permalink"`
 	Positives  uint16             `json:"positives"`
-        Total      uint16              `json:"total"`
+	Total      uint16             `json:"total"`
 	Scans      map[string]UrlScan `json:"scans"`
 	FileScanId string             `json:"filescan_id"`
 }
@@ -193,57 +201,212 @@ func (self ClientError) Error() string {
 	return self.msg
 }
 
-// UseDefaultUrl configures a `Client` to use the default public
-//   VT URL published on their website.
-func (self *Client) UseDefaultUrl() {
-	self.Url = "https://www.virustotal.com/vtapi/v2/"
+// OptionFunc is a function that configures a Client.
+// It is used in New
+type OptionFunc func(*Client) error
+
+// errorf logs to the error log.
+func (self *Client) errorf(format string, args ...interface{}) {
+	if self.errorlog != nil {
+		self.errorlog.Printf(format, args...)
+	}
 }
 
-// checkApiKey ensures that the user configured her API key,
-//   or returns an error.
-func (self *Client) checkApiKey() (err error) {
-	if self.Apikey == "" {
-		return ClientError{msg: "Empty API key is invalid"}
-	} else {
+// tracef logs to the trace log.
+func (self *Client) tracef(format string, args ...interface{}) {
+	if self.tracelog != nil {
+		self.tracelog.Printf(format, args...)
+	}
+}
+
+// New creates a new virustotal client.
+//
+// The caller can configure the new client by passing configuration options to the func.
+//
+// Example:
+//
+//   client, err := govt.New(
+//     govt.SetUrl("http://some.url.com:port"),
+//     govt.SetErrorLog(log.New(os.Stderr, "VT: ", log.Lshortfile))
+//
+// If no URL is configured, Client uses DefaultURL by default.
+//
+// If no HttpClient is configured, then http.DefaultClient is used.
+// You can use your own http.Client with some http.Transport for advanced scenarios.
+//
+// An error is also returned when some configuration option is invalid.
+func New(options ...OptionFunc) (*Client, error) {
+	// Set up the client
+	c := &Client{
+		url: "",
+		c:   http.DefaultClient,
+	}
+
+	// Run the options on it
+	for _, option := range options {
+		if err := option(c); err != nil {
+			return nil, err
+		}
+	}
+	if c.apikey == "" {
+		msg := "No API key specified"
+		c.errorf(msg)
+		return nil, ClientError{msg: msg}
+	}
+	if c.url == "" {
+		c.url = DefaultURL
+	}
+	if !strings.HasSuffix(c.url, "/") {
+		c.url += "/"
+	}
+	c.tracef("Using URL [%s]\n", c.url)
+
+	return c, nil
+}
+
+// Initialization functions
+
+// SetApikey sets the VT API key to use
+func SetApikey(apikey string) OptionFunc {
+	return func(c *Client) error {
+		if apikey == "" {
+			msg := "You must provide an API key to use the client"
+			c.errorf(msg)
+			return ClientError{msg: msg}
+		}
+		c.apikey = apikey
 		return nil
 	}
+}
+
+// SetHttpClient can be used to specify the http.Client to use when making
+// HTTP requests to viper.
+func SetHttpClient(httpClient *http.Client) OptionFunc {
+	return func(c *Client) error {
+		if httpClient != nil {
+			c.c = httpClient
+		} else {
+			c.c = http.DefaultClient
+		}
+		return nil
+	}
+}
+
+// SetUrl defines the URL endpoint VT
+func SetUrl(rawurl string) OptionFunc {
+	return func(c *Client) error {
+		if rawurl == "" {
+			rawurl = DefaultURL
+		}
+		u, err := url.Parse(rawurl)
+		if err != nil {
+			c.errorf("Invalid URL [%s] - %v\n", rawurl, err)
+			return err
+		}
+		if u.Scheme != "http" && u.Scheme != "https" {
+			msg := fmt.Sprintf("Invalid schema specified [%s]", rawurl)
+			c.errorf(msg)
+			return ClientError{msg: msg}
+		}
+		return nil
+	}
+}
+
+// SetBasicAuth allows to set proxy credentials
+func SetBasicAuth(username, password string) OptionFunc {
+	return func(c *Client) error {
+		c.basicAuthUsername = username
+		c.basicAuthPassword = password
+		return nil
+	}
+}
+
+// SetErrorLog sets the logger for critical messages. It is nil by default.
+func SetErrorLog(logger *log.Logger) func(*Client) error {
+	return func(c *Client) error {
+		c.errorlog = logger
+		return nil
+	}
+}
+
+// SetTraceLog specifies the logger to use for output of trace messages like
+// HTTP requests and responses. It is nil by default.
+func SetTraceLog(logger *log.Logger) func(*Client) error {
+	return func(c *Client) error {
+		c.tracelog = logger
+		return nil
+	}
+}
+
+// dumpRequest dumps a request to the debug logger if it was defined
+func (self *Client) dumpRequest(req *http.Request) {
+	if self.tracelog != nil {
+		out, err := httputil.DumpRequestOut(req, true)
+		if err == nil {
+			self.tracef("%s\n", string(out))
+		}
+	}
+}
+
+// dumpResponse dumps a response to the debug logger if it was defined
+func (self *Client) dumpResponse(resp *http.Response) {
+	if self.tracelog != nil {
+		out, err := httputil.DumpResponse(resp, true)
+		if err == nil {
+			self.tracef("%s\n", string(out))
+		}
+	}
+}
+
+// Request handling functions
+
+// handleError will handle responses with status code different from 200
+func (self *Client) handleError(resp *http.Response) error {
+	if resp.StatusCode != http.StatusOK {
+		if self.errorlog != nil {
+			out, err := httputil.DumpResponse(resp, true)
+			if err == nil {
+				self.errorf("%s\n", string(out))
+			}
+		}
+		if resp.Body != nil {
+			resp.Body.Close()
+		}
+		msg := fmt.Sprintf("Unexpected status code: %d (%s)", resp.StatusCode, http.StatusText(resp.StatusCode))
+		self.errorf(msg)
+		return ClientError{msg: msg}
+	}
+	return nil
 }
 
 // makeApiGetRequest fetches a URL with querystring via HTTP GET and
 //  returns the response if the status code is HTTP 200
 // `parameters` should not include the apikey.
 // The caller must call `resp.Body.Close()`.
-func (self *Client) makeApiGetRequest(fullurl string, parameters map[string]string) (resp *http.Response, err error) {
-	if err = self.checkApiKey(); err != nil {
-		return resp, err
-	}
-
+func (self *Client) makeApiGetRequest(fullurl string, parameters Parameters) (resp *http.Response, err error) {
 	values := url.Values{}
-	values.Set("apikey", self.Apikey)
+	values.Set("apikey", self.apikey)
 	for k, v := range parameters {
 		values.Add(k, v)
 	}
 
-	httpClient := http.Client{}
 	// TODO(wb) check if final character is ?, or if ? already exists
 	req, err := http.NewRequest("GET", fullurl+"?"+values.Encode(), nil)
 	if err != nil {
 		return resp, err
 	}
 
-	if self.BasicAuthUsername != "" {
-		req.SetBasicAuth(self.BasicAuthUsername, self.BasicAuthPassword)
+	if self.basicAuthUsername != "" {
+		req.SetBasicAuth(self.basicAuthUsername, self.basicAuthPassword)
 	}
 
-	resp, err = httpClient.Do(req)
+	resp, err = self.c.Do(req)
 	if err != nil {
 		return resp, err
 	}
 
-	if resp.StatusCode != 200 {
-		var msg string = fmt.Sprintf("Unexpected status code: %d", resp.StatusCode)
-		resp.Write(os.Stdout)
-		return resp, ClientError{msg: msg}
+	if err = self.handleError(resp); err != nil {
+		return resp, err
 	}
 
 	return resp, nil
@@ -253,13 +416,9 @@ func (self *Client) makeApiGetRequest(fullurl string, parameters map[string]stri
 //  returns the response if the status code is HTTP 200
 // `parameters` should not include the apikey.
 // The caller must call `resp.Body.Close()`.
-func (self *Client) makeApiPostRequest(fullurl string, parameters map[string]string) (resp *http.Response, err error) {
-	if err = self.checkApiKey(); err != nil {
-		return resp, err
-	}
-
+func (self *Client) makeApiPostRequest(fullurl string, parameters Parameters) (resp *http.Response, err error) {
 	values := url.Values{}
-	values.Set("apikey", self.Apikey)
+	values.Set("apikey", self.apikey)
 	for k, v := range parameters {
 		values.Add(k, v)
 	}
@@ -269,10 +428,8 @@ func (self *Client) makeApiPostRequest(fullurl string, parameters map[string]str
 		return resp, err
 	}
 
-	if resp.StatusCode != 200 {
-		var msg string = fmt.Sprintf("Unexpected status code: %d", resp.StatusCode)
-		resp.Write(os.Stdout)
-		return resp, ClientError{msg: msg}
+	if err = self.handleError(resp); err != nil {
+		return resp, err
 	}
 
 	return resp, nil
@@ -282,40 +439,45 @@ func (self *Client) makeApiPostRequest(fullurl string, parameters map[string]str
 //  returns the response if the status code is HTTP 200
 // `parameters` should not include the apikey.
 // The caller must call `resp.Body.Close()`.
-func (self *Client) makeApiUploadRequest(fullurl string, parameters map[string]string, paramName, path string) (resp *http.Response, err error) {
+func (self *Client) makeApiUploadRequest(fullurl string, parameters Parameters, paramName, path string) (resp *http.Response, err error) {
 	// open the file
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
-
-	// prepare and create a multipart/mime body
-	// create a buffer to hold the body of our HTTP Request
-	body := &bytes.Buffer{}
+	// set Apikey as parameter
+	parameters["apikey"] = self.apikey
+	// Pipe the file so as not to read it into memory
+	bodyReader, bodyWriter := io.Pipe()
 	// create a multipat/mime writer
-	writer := multipart.NewWriter(body)
+	writer := multipart.NewWriter(bodyWriter)
 	// get the Content-Type of our form data
 	fdct := writer.FormDataContentType()
-	// create a part for our file
-	part, err := writer.CreateFormFile(paramName, filepath.Base(path))
-	if err != nil {
-		return nil, err
-	}
-	// copy our file into the file part of our multipart/mime message
-	_, err = io.Copy(part, file)
-	// set Apikey as parameter
-	parameters["apikey"] = self.Apikey
-	// write parameters into the request
-	for key, val := range parameters {
-		_ = writer.WriteField(key, val)
-	}
-	err = writer.Close()
-	if err != nil {
-		return nil, err
-	}
+	// Read file errors from the channel
+	errChan := make(chan error, 1)
+	go func() {
+		defer bodyWriter.Close()
+		defer file.Close()
+		part, err := writer.CreateFormFile(paramName, filepath.Base(path))
+		if err != nil {
+			errChan <- err
+			return
+		}
+		if _, err := io.Copy(part, file); err != nil {
+			errChan <- err
+			return
+		}
+		for k, v := range parameters {
+			if err := writer.WriteField(k, v); err != nil {
+				errChan <- err
+				return
+			}
+		}
+		errChan <- writer.Close()
+	}()
+
 	// create a HTTP request with our body, that contains our file
-	postReq, err := http.NewRequest("POST", fullurl, body)
+	postReq, err := http.NewRequest("POST", fullurl, bodyReader)
 	if err != nil {
 		return resp, err
 	}
@@ -323,18 +485,16 @@ func (self *Client) makeApiUploadRequest(fullurl string, parameters map[string]s
 	//  some implementations fail if this is not present. (malwr.com, virustotal.com, probably others too)
 	//  this could also be a bug in go actually.
 	postReq.Header.Add("Content-Type", fdct)
-	// prepare http client
-	client := &http.Client{}
 	// send our request off, get response and/or error
-	resp, err = client.Do(postReq)
+	resp, err = self.c.Do(postReq)
+	if err = <-errChan; err != nil {
+		return resp, err
+	}
 	if err != nil {
 		return resp, err
 	}
-	// oops something went wrong
-	if resp.StatusCode != 200 {
-		var msg string = fmt.Sprintf("Unexpected status code: %d", resp.StatusCode)
-		resp.Write(os.Stdout)
-		return resp, ClientError{msg: msg}
+	if err = self.handleError(resp); err != nil {
+		return resp, err
 	}
 	// we made it, let's return
 	return resp, nil
@@ -348,7 +508,7 @@ type Parameters map[string]string
 // `parameters` does not include the API key
 // `result` is modified as an output parameter. It must be a pointer to a VT JSON structure.
 func (self *Client) fetchApiJson(method string, actionurl string, parameters Parameters, result interface{}) (err error) {
-	theurl := self.Url + actionurl
+	theurl := self.url + actionurl
 	var resp *http.Response
 	switch method {
 	case "GET":
@@ -376,7 +536,7 @@ func (self *Client) fetchApiJson(method string, actionurl string, parameters Par
 
 // fetchApiFile makes a get request to the API and returns the file content
 func (self *Client) fetchApiFile(actionurl string, parameters Parameters) (data []byte, err error) {
-    theurl := self.Url + actionurl
+	theurl := self.url + actionurl
 	var resp *http.Response
 	resp, err = self.makeApiGetRequest(theurl, parameters)
 	if err != nil {
@@ -389,6 +549,8 @@ func (self *Client) fetchApiFile(actionurl string, parameters Parameters) (data 
 	}
 	return data, nil
 }
+
+// Public API
 
 // ScanUrl asks VT to redo analysis on the specified file.
 func (self *Client) ScanUrl(url string) (r *ScanUrlResult, err error) {
