@@ -399,11 +399,13 @@ func (self *Client) makeApiGetRequest(fullurl string, parameters Parameters) (re
 	if self.basicAuthUsername != "" {
 		req.SetBasicAuth(self.basicAuthUsername, self.basicAuthPassword)
 	}
-
+	self.dumpRequest(req)
 	resp, err = self.c.Do(req)
 	if err != nil {
 		return resp, err
 	}
+
+	self.dumpResponse(resp)
 
 	if err = self.handleError(resp); err != nil {
 		return resp, err
@@ -427,6 +429,8 @@ func (self *Client) makeApiPostRequest(fullurl string, parameters Parameters) (r
 	if err != nil {
 		return resp, err
 	}
+
+	self.dumpResponse(resp)
 
 	if err = self.handleError(resp); err != nil {
 		return resp, err
@@ -485,6 +489,9 @@ func (self *Client) makeApiUploadRequest(fullurl string, parameters Parameters, 
 	//  some implementations fail if this is not present. (malwr.com, virustotal.com, probably others too)
 	//  this could also be a bug in go actually.
 	postReq.Header.Add("Content-Type", fdct)
+
+	self.dumpRequest(postReq)
+
 	// send our request off, get response and/or error
 	resp, err = self.c.Do(postReq)
 	if err = <-errChan; err != nil {
@@ -493,6 +500,9 @@ func (self *Client) makeApiUploadRequest(fullurl string, parameters Parameters, 
 	if err != nil {
 		return resp, err
 	}
+
+	self.dumpResponse(resp)
+
 	if err = self.handleError(resp); err != nil {
 		return resp, err
 	}
