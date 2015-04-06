@@ -268,25 +268,25 @@ func New(options ...OptionFunc) (*Client, error) {
 
 // SetApikey sets the VT API key to use
 func SetApikey(apikey string) OptionFunc {
-	return func(c *Client) error {
+	return func(self *Client) error {
 		if apikey == "" {
 			msg := "You must provide an API key to use the client"
-			c.errorf(msg)
+			self.errorf(msg)
 			return ClientError{msg: msg}
 		}
-		c.apikey = apikey
+		self.apikey = apikey
 		return nil
 	}
 }
 
 // SetHttpClient can be used to specify the http.Client to use when making
-// HTTP requests to viper.
+// HTTP requests to VT.
 func SetHttpClient(httpClient *http.Client) OptionFunc {
-	return func(c *Client) error {
+	return func(self *Client) error {
 		if httpClient != nil {
-			c.c = httpClient
+			self.c = httpClient
 		} else {
-			c.c = http.DefaultClient
+			self.c = http.DefaultClient
 		}
 		return nil
 	}
@@ -294,29 +294,30 @@ func SetHttpClient(httpClient *http.Client) OptionFunc {
 
 // SetUrl defines the URL endpoint VT
 func SetUrl(rawurl string) OptionFunc {
-	return func(c *Client) error {
+	return func(self *Client) error {
 		if rawurl == "" {
 			rawurl = DefaultURL
 		}
 		u, err := url.Parse(rawurl)
 		if err != nil {
-			c.errorf("Invalid URL [%s] - %v\n", rawurl, err)
+			self.errorf("Invalid URL [%s] - %v\n", rawurl, err)
 			return err
 		}
 		if u.Scheme != "http" && u.Scheme != "https" {
 			msg := fmt.Sprintf("Invalid schema specified [%s]", rawurl)
-			c.errorf(msg)
+			self.errorf(msg)
 			return ClientError{msg: msg}
 		}
+		self.url = rawurl
 		return nil
 	}
 }
 
 // SetBasicAuth allows to set proxy credentials
 func SetBasicAuth(username, password string) OptionFunc {
-	return func(c *Client) error {
-		c.basicAuthUsername = username
-		c.basicAuthPassword = password
+	return func(self *Client) error {
+		self.basicAuthUsername = username
+		self.basicAuthPassword = password
 		return nil
 	}
 }
