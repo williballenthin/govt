@@ -40,9 +40,9 @@ type Status struct {
 	VerboseMsg   string `json:"verbose_msg"`
 }
 
-// FileResult 
+// FileResult
 type FileDownloadResult struct {
-	Content	[]byte
+	Content []byte
 }
 
 // FileScan is defined by VT.
@@ -138,7 +138,7 @@ type UrlReport struct {
 	ScanDate   string             `json:"scan_date"`
 	Permalink  string             `json:"permalink"`
 	Positives  uint16             `json:"positives"`
-        Total      uint16              `json:"total"`
+	Total      uint16             `json:"total"`
 	Scans      map[string]UrlScan `json:"scans"`
 	FileScanId string             `json:"filescan_id"`
 }
@@ -181,6 +181,19 @@ type DomainReport struct {
 	Status
 	Resolutions  []DomainResolution
 	DetectedUrls []DetectedUrl `json:"detected_urls"`
+}
+
+// CommentReport is defined by VT.
+type CommentReport struct {
+	Status
+	Resource string    `json:"resource"`
+	Comments []Comment `json:"comments"`
+}
+
+// Comment is defined by VT
+type Comment struct {
+	Date    string `json:"date"`
+	Comment string `json:"comment"`
 }
 
 // ClientError is a generic error specific to the `govt` package.
@@ -376,7 +389,7 @@ func (self *Client) fetchApiJson(method string, actionurl string, parameters Par
 
 // fetchApiFile makes a get request to the API and returns the file content
 func (self *Client) fetchApiFile(actionurl string, parameters Parameters) (data []byte, err error) {
-    theurl := self.Url + actionurl
+	theurl := self.Url + actionurl
 	var resp *http.Response
 	resp, err = self.makeApiGetRequest(theurl, parameters)
 	if err != nil {
@@ -509,5 +522,13 @@ func (self *Client) MakeComment(resource string, comment string) (r *Status, err
 	r = &Status{}
 	parameters := Parameters{"resource": resource, "comment": comment}
 	err = self.fetchApiJson("POST", "comments/put", parameters, r)
+	return r, err
+}
+
+// GetComments gets comments for file/URL/IP/domain.
+func (self *Client) GetComments(resource string) (r *CommentReport, err error) {
+	r = &CommentReport{}
+	parameters := Parameters{"resource": resource}
+	err = self.fetchApiJson("GET", "comments/get", parameters, r)
 	return r, err
 }
