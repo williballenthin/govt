@@ -76,16 +76,81 @@ type FileDistributionResults []FileReportDistrib
 // FileReport is defined by VT.
 type FileReport struct {
 	Status
-	Resource  string              `json:"resource"`
-	ScanId    string              `json:"scan_id"`
-	Md5       string              `json:"md5"`
-	Sha1      string              `json:"sha1"`
-	Sha256    string              `json:"sha256"`
-	ScanDate  string              `json:"scan_date"`
-	Positives uint16              `json:"positives"`
-	Total     uint16              `json:"total"`
-	Scans     map[string]FileScan `json:"scans"`
-	Permalink string              `json:"permalink"`
+	Resource            string                `json:"resource"`
+	Vhash               string                `json:"vhash"`
+	ScanId              string                `json:"scan_id"`
+	Md5                 string                `json:"md5"`
+	Sha1                string                `json:"sha1"`
+	Sha256              string                `json:"sha256"`
+	ScanDate            string                `json:"scan_date"`
+	Total               uint16                `json:"total"`
+	Tags                []string              `json:"tags"`
+	Scans               map[string]FileScan   `json:"scans"`
+	Ssdeep              string                `json:"ssdeep"`
+	FirstSeen           string                `json:"first_seen"`
+	LastSeen            string                `json:"last_seen"`
+	Permalink           string                `json:"permalink"`
+	UniqueSources       uint16                `json:"unique_sources"`
+	TimesSubmitted      uint16                `json:"times_submitted"`
+	PositivesVotes      uint16                `json:"positives"`
+	HarmlessVotes       uint16                `json:"harmless_votes"`
+	MaliciousVotes      uint16                `json:"malicious_votes"`
+	CommunityReputation uint16                `json:"community_reputation"`
+	AdditionnalInfo     AdditionnalInfoResult `json:"additional_info"`
+	IntoTheWildURLs     []string              `json:"ITW_urls"`
+	SubmissionNames     []string              `json:"submission_names"`
+}
+
+type AdditionnalInfoResult struct {
+	Magic            string               `json:"magic"`
+	Signature        SigCheck             `json:"sigcheck"`
+	PEImpHash        string               `json:"pe-imphash"`
+	PETimeStamp      int                  `json:"pe-timestamp"`
+	PEResourceList   map[string]string    `json:"pe-resource-list"`
+	PEResourceLangs  map[string]int       `json:"pe-resource-langs"`
+	PEResourceTypes  map[string]int       `json:"pe-resource-types"`
+	PEResourceDetail []PEResource         `json:"pe-resource-detail"`
+	PEMachineType    int                  `json:"pe-machine-type"`
+	PEEntryPoint     int                  `json:"pe-entry-point"`
+	AutoStart        []AutoStartEntry     `json:"autostart"`
+	Imports          map[string][]string  `json:"imports"`
+	TrustedVerdict   TrustedVerdictResult `json:"trusted_verdict"`
+}
+
+type TrustedVerdictResult struct {
+	Organization string `json:"organization"`
+	Verdict      string `json:"verdict"`
+	Filename     string `json:"filename"`
+}
+
+type AutoStartEntry struct {
+	Entry    string `json:"entry"`
+	Location string `json:"location"`
+}
+
+type PEResource struct {
+	Lang     string `json:"lang"`
+	FileType string `json:"filetype"`
+	Sha256   string `json:"sha256"`
+	Type     string `json:"type"`
+}
+
+type SigCheck struct {
+	SignersDetails []SignerDetail `json:"signers details"`
+	Verified       string         `json:"verified"`
+	Publisher      string         `json:"publisher"`
+	Product        string         `json:"product"`
+	Description    string         `json:"description"`
+	SigningDate    string         `json:"signing date"`
+}
+
+type SignerDetail struct {
+	Status       string `json:"status"`
+	Name         string `json:"name"`
+	Thumbprint   string `json:"thumbprint"`
+	SerialNumber string `json:"serial number"`
+	ValidFrom    string `json:"valid from"`
+	ValidTo      string `json:"valid to"`
 }
 
 // ScanFileResult is defined by VT.
@@ -450,7 +515,7 @@ func (self *Client) RescanFiles(md5s []string) (r *RescanFileResults, err error)
 // GetFileReport fetches the AV scan reports tracked by VT given an MD5 hash value.
 func (self *Client) GetFileReport(md5 string) (r *FileReport, err error) {
 	r = &FileReport{}
-	err = self.fetchApiJson("GET", "file/report", Parameters{"resource": md5}, r)
+	err = self.fetchApiJson("GET", "file/report", Parameters{"resource": md5, "allinfo": "1"}, r)
 	return r, err
 }
 
