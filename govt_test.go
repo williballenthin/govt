@@ -50,7 +50,7 @@ func TestGetFileReports(t *testing.T) {
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	md5s := []string {"eeb024f2c81f0d55936fb825d21a91d6", "1F4C43ADFD45381CFDAD1FAFEA16B808"}
+	md5s := []string{"eeb024f2c81f0d55936fb825d21a91d6", "1F4C43ADFD45381CFDAD1FAFEA16B808"}
 	reports, err := govt.GetFileReports(md5s)
 	if err != nil {
 		t.Error("Error requesting reports: ", err.Error())
@@ -257,4 +257,27 @@ func TestGetDomainReport(t *testing.T) {
     return
   }
 }
+
+// TestGetComments tests the structure and execution of a request.
+func TestGetComments(t *testing.T) {
+	if apikey == "" {
+		t.Error("Unfortunately, you must edit the test case and provide your API key")
+		return
+	}
+
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
+
+	testSHA256 := "2fcc9209ddeb18b2dbd4db5f42dd477feaf4a1c3028eb6393dbaa21bd26b800c"
+	report, err := govt.GetComments(testSHA256)
+	if err != nil {
+		t.Error("Error requesting comments: ", err.Error())
+		return
+	}
+	if report.ResponseCode != 1 {
+		t.Error("Response code indicates failure: %d", report.ResponseCode)
+		return
+	}
+}
+
 */
