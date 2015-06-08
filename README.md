@@ -27,7 +27,7 @@ Implemented Features
 | GET /vtapi/v2/ip-address/report    | Get information about a given IP address.                                              | public |true |
 | GET /vtapi/v2/domain/report        | Get information about a given domain.                                                  | public |true |
 | POST /vtapi/v2/comments/put        | Post a comment on a file or URL.                                                       | public |true |
-| GET /vtapi/v2/comments/get         | Get comments for a file or URL.                                                        | private|false|
+| GET /vtapi/v2/comments/get         | Get comments for a file or URL.                                                        | private|true |
 
 Missing Features
 ================
