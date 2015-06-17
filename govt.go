@@ -495,8 +495,8 @@ func (self *Client) makeApiUploadRequest(fullurl string, parameters Parameters, 
 
 	// send our request off, get response and/or error
 	resp, err = self.c.Do(postReq)
-	if err = <-errChan; err != nil {
-		return resp, err
+	if cerr := <-errChan; cerr != nil {
+		return resp, cerr
 	}
 	if err != nil {
 		return resp, err
