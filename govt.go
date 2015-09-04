@@ -76,29 +76,33 @@ type FileDistributionResults []FileReportDistrib
 // FileReport is defined by VT.
 type FileReport struct {
 	Status
-	Resource            string                `json:"resource"`
+	Resource  string              `json:"resource"`
+	ScanId    string              `json:"scan_id"`
+	Md5       string              `json:"md5"`
+	Sha1      string              `json:"sha1"`
+	Sha256    string              `json:"sha256"`
+	ScanDate  string              `json:"scan_date"`
+	Positives uint16              `json:"positives"`
+	Total     uint16              `json:"total"`
+	Scans     map[string]FileScan `json:"scans"`
+	Permalink string              `json:"permalink"`
+}
+
+type DetailedFileReport struct {
+	FileReport
 	Vhash               string                `json:"vhash"`
-	ScanId              string                `json:"scan_id"`
-	Md5                 string                `json:"md5"`
-	Sha1                string                `json:"sha1"`
-	Sha256              string                `json:"sha256"`
-	ScanDate            string                `json:"scan_date"`
-	Total               uint16                `json:"total"`
 	Tags                []string              `json:"tags"`
-	Scans               map[string]FileScan   `json:"scans"`
-	Ssdeep              string                `json:"ssdeep"`
-	FirstSeen           string                `json:"first_seen"`
-	LastSeen            string                `json:"last_seen"`
-	Permalink           string                `json:"permalink"`
 	UniqueSources       uint16                `json:"unique_sources"`
 	TimesSubmitted      uint16                `json:"times_submitted"`
-	PositivesVotes      uint16                `json:"positives"`
 	HarmlessVotes       uint16                `json:"harmless_votes"`
 	MaliciousVotes      uint16                `json:"malicious_votes"`
 	CommunityReputation uint16                `json:"community_reputation"`
 	AdditionnalInfo     AdditionnalInfoResult `json:"additional_info"`
 	IntoTheWildURLs     []string              `json:"ITW_urls"`
 	SubmissionNames     []string              `json:"submission_names"`
+	Ssdeep              string                `json:"ssdeep"`
+	FirstSeen           string                `json:"first_seen"`
+	LastSeen            string                `json:"last_seen"`
 }
 
 type AdditionnalInfoResult struct {
@@ -512,10 +516,18 @@ func (self *Client) RescanFiles(md5s []string) (r *RescanFileResults, err error)
 	return r, err
 }
 
+// GetFileDetailedReport fetches the AV scan reports tracked by VT given an MD5 hash value.
+// This API is part of the VTI Private API, requiring a licenced API key
+func (self *Client) GetDetailedFileReport(md5 string) (r *DetailedFileReport, err error) {
+	r = &DetailedFileReport{}
+	err = self.fetchApiJson("GET", "file/report", Parameters{"resource": md5, "allinfo": "1"}, r)
+	return r, err
+}
+
 // GetFileReport fetches the AV scan reports tracked by VT given an MD5 hash value.
 func (self *Client) GetFileReport(md5 string) (r *FileReport, err error) {
 	r = &FileReport{}
-	err = self.fetchApiJson("GET", "file/report", Parameters{"resource": md5, "allinfo": "1"}, r)
+	err = self.fetchApiJson("GET", "file/report", Parameters{"resource": md5}, r)
 	return r, err
 }
 
