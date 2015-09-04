@@ -88,6 +88,75 @@ type FileReport struct {
 	Permalink string              `json:"permalink"`
 }
 
+type DetailedFileReport struct {
+	FileReport
+	Vhash               string                `json:"vhash"`
+	Tags                []string              `json:"tags"`
+	UniqueSources       uint16                `json:"unique_sources"`
+	TimesSubmitted      uint16                `json:"times_submitted"`
+	HarmlessVotes       uint16                `json:"harmless_votes"`
+	MaliciousVotes      uint16                `json:"malicious_votes"`
+	CommunityReputation uint16                `json:"community_reputation"`
+	AdditionnalInfo     AdditionnalInfoResult `json:"additional_info"`
+	IntoTheWildURLs     []string              `json:"ITW_urls"`
+	SubmissionNames     []string              `json:"submission_names"`
+	Ssdeep              string                `json:"ssdeep"`
+	FirstSeen           string                `json:"first_seen"`
+	LastSeen            string                `json:"last_seen"`
+}
+
+type AdditionnalInfoResult struct {
+	Magic            string               `json:"magic"`
+	Signature        SigCheck             `json:"sigcheck"`
+	PEImpHash        string               `json:"pe-imphash"`
+	PETimeStamp      int                  `json:"pe-timestamp"`
+	PEResourceList   map[string]string    `json:"pe-resource-list"`
+	PEResourceLangs  map[string]int       `json:"pe-resource-langs"`
+	PEResourceTypes  map[string]int       `json:"pe-resource-types"`
+	PEResourceDetail []PEResource         `json:"pe-resource-detail"`
+	PEMachineType    int                  `json:"pe-machine-type"`
+	PEEntryPoint     int                  `json:"pe-entry-point"`
+	AutoStart        []AutoStartEntry     `json:"autostart"`
+	Imports          map[string][]string  `json:"imports"`
+	TrustedVerdict   TrustedVerdictResult `json:"trusted_verdict"`
+}
+
+type TrustedVerdictResult struct {
+	Organization string `json:"organization"`
+	Verdict      string `json:"verdict"`
+	Filename     string `json:"filename"`
+}
+
+type AutoStartEntry struct {
+	Entry    string `json:"entry"`
+	Location string `json:"location"`
+}
+
+type PEResource struct {
+	Lang     string `json:"lang"`
+	FileType string `json:"filetype"`
+	Sha256   string `json:"sha256"`
+	Type     string `json:"type"`
+}
+
+type SigCheck struct {
+	SignersDetails []SignerDetail `json:"signers details"`
+	Verified       string         `json:"verified"`
+	Publisher      string         `json:"publisher"`
+	Product        string         `json:"product"`
+	Description    string         `json:"description"`
+	SigningDate    string         `json:"signing date"`
+}
+
+type SignerDetail struct {
+	Status       string `json:"status"`
+	Name         string `json:"name"`
+	Thumbprint   string `json:"thumbprint"`
+	SerialNumber string `json:"serial number"`
+	ValidFrom    string `json:"valid from"`
+	ValidTo      string `json:"valid to"`
+}
+
 // ScanFileResult is defined by VT.
 type ScanFileResult struct {
 	Status
@@ -444,6 +513,14 @@ func (self *Client) RescanFiles(md5s []string) (r *RescanFileResults, err error)
 	r = &RescanFileResults{}
 	parameters := Parameters{"resource": strings.Join(md5s, ",")}
 	err = self.fetchApiJson("POST", "file/rescan", parameters, r)
+	return r, err
+}
+
+// GetFileDetailedReport fetches the AV scan reports tracked by VT given an MD5 hash value.
+// This API is part of the VTI Private API, requiring a licenced API key
+func (self *Client) GetDetailedFileReport(md5 string) (r *DetailedFileReport, err error) {
+	r = &DetailedFileReport{}
+	err = self.fetchApiJson("GET", "file/report", Parameters{"resource": md5, "allinfo": "1"}, r)
 	return r, err
 }
 
