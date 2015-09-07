@@ -89,8 +89,7 @@ type FileReport struct {
 }
 
 type DetailedFileReport struct {
-	FileReport
-	Vhash               string                `json:"vhash"`
+	FileReportDistrib
 	Tags                []string              `json:"tags"`
 	UniqueSources       uint16                `json:"unique_sources"`
 	TimesSubmitted      uint16                `json:"times_submitted"`
@@ -101,8 +100,6 @@ type DetailedFileReport struct {
 	IntoTheWildURLs     []string              `json:"ITW_urls"`
 	SubmissionNames     []string              `json:"submission_names"`
 	Ssdeep              string                `json:"ssdeep"`
-	FirstSeen           string                `json:"first_seen"`
-	LastSeen            string                `json:"last_seen"`
 }
 
 type AdditionnalInfoResult struct {
