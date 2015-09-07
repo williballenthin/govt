@@ -96,7 +96,7 @@ type DetailedFileReport struct {
 	TimesSubmitted      uint16                `json:"times_submitted"`
 	HarmlessVotes       uint16                `json:"harmless_votes"`
 	MaliciousVotes      uint16                `json:"malicious_votes"`
-	CommunityReputation uint16                `json:"community_reputation"`
+	CommunityReputation int                   `json:"community_reputation"`
 	AdditionnalInfo     AdditionnalInfoResult `json:"additional_info"`
 	IntoTheWildURLs     []string              `json:"ITW_urls"`
 	SubmissionNames     []string              `json:"submission_names"`
