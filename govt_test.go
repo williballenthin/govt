@@ -40,6 +40,49 @@ func TestGetFileReport(t *testing.T) {
 	}
 }
 
+// TestGetDetailedFileReport tests the structure and execution of a request.
+func TestGetDetailedFileReport(t *testing.T) {
+	if apikey == "" {
+		t.Error("Unfortunately, you must edit the test case and provide your API key")
+		return
+	}
+
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
+
+	var testMd5 string = "e320908e9cac93876be08549bf0be67f"
+	var testFpr []string = []string{
+		"9617094A1CFB59AE7C1F7DFDB6739E4E7C40508F", // Microsoft Corporation
+		"3036E3B25B88A55B86FC90E6E9EAAD5081445166", // Microsoft Code Signing PCA
+		"A43489159A520F0D93D032CCAF37E7FE20A8B419", // Microsoft Root Authority
+	}
+
+	report, err := govt.GetDetailedFileReport(testMd5)
+	if err != nil {
+		t.Error("Error requesting report: ", err.Error())
+		return
+	}
+	if report.ResponseCode != 1 {
+		t.Error("Response code indicates failure: %d", report.ResponseCode)
+		return
+	}
+
+	if report.Md5 != testMd5 {
+		t.Error("Requested MD5 does not match result: ", testMd5, " vs. ", report.Md5)
+		return
+	}
+
+	i := 0
+	for _, sig := range report.AdditionnalInfo.Signature.SignersDetails {
+		fpr := sig.Thumbprint
+		if fpr != testFpr[i] {
+			t.Error("Requested signature fingerprint does not match result: ", testFpr[i], " vs. ", fpr)
+			return
+		}
+		i++
+	}
+}
+
 // TestGetFileReports tests the structure and execution of a request.
 func TestGetFileReports(t *testing.T) {
 	if apikey == "" {
