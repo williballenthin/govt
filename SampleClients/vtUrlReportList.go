@@ -9,7 +9,8 @@ import (
 	"fmt"
 	"github.com/williballenthin/govt"
 	"os"
-	"time"
+	//"time"
+	"net/url"
 )
 
 var apikey string
@@ -46,9 +47,14 @@ func main() {
 	defer f.Close()
 	scanner := bufio.NewScanner(f)
 	for scanner.Scan() {
-		url := scanner.Text()
+		str := scanner.Text()
+		// TODO: check if input is a url, otherwise skip it
+		url, err := parseUrl(str)
+		if err != nil {
+			break
+		}
 		// get an URL report
-		r, err := c.GetUrlReport(url)
+		r, err := c.GetUrlReport(url.String())
 		check(err)
 		//fmt.Printf("r: %s\n", r)
 		//j, err := json.MarshalIndent(r, "", "    ")
@@ -61,4 +67,10 @@ func main() {
 		// time.Sleep(25 * time.Second)
 	}
 
+}
+
+// parseURL - takes an URL string as input and returns a pointer to an url.URL object
+func parseUrl(ustr string) (u *url.URL, err error) {
+	u, err = url.Parse(ustr)
+	return u, err
 }
