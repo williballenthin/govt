@@ -3,13 +3,12 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	//"github.com/williballenthin/govt"
-	"github.com/scusi/govt"
-	"flag"
-	"os"
 	"bufio"
+	"encoding/json"
+	"flag"
+	"fmt"
+	"github.com/williballenthin/govt"
+	"os"
 )
 
 var apikey string
