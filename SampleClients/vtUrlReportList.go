@@ -4,12 +4,11 @@ package main
 
 import (
 	//"encoding/json"
-	"fmt"
-	//"github.com/williballenthin/govt"
-	"github.com/scusi/govt"
-	"flag"
-	"os"
 	"bufio"
+	"flag"
+	"fmt"
+	"github.com/williballenthin/govt"
+	"os"
 	"time"
 )
 
@@ -57,7 +56,9 @@ func main() {
 		//os.Stdout.Write(j)
 		//fmt.Println()
 		fmt.Printf("[%d/%d] %s\n", r.Positives, r.Total, url)
-		time.Sleep(25 * time.Second)
+		// the following sleep is needed because the API is rate limited to 4 requests per minute,
+		// unless your api key is encountered not beeing rate limited.
+		// time.Sleep(25 * time.Second)
 	}
 
 }
