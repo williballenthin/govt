@@ -5,10 +5,9 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	//"github.com/williballenthin/govt"
 	"flag"
-	"github.com/scusi/govt"
+	"fmt"
+	"github.com/williballenthin/govt"
 	"os"
 )
 
@@ -21,7 +20,7 @@ var rsrc string
 func init() {
 	flag.StringVar(&apikey, "apikey", os.Getenv("VT_API_KEY"), "Set environment variable VT_API_KEY to your VT API Key or specify on prompt")
 	flag.StringVar(&apiurl, "apiurl", "https://www.virustotal.com/vtapi/v2/", "URL of the VirusTotal API to be used.")
-	flag.StringVar(&rsrc, "rsrc", "8ac31b7350a95b0b492434f9ae2f1cde", "resource of file to retrieve report for. A resource can be md5, sha-1 or sha-2 sum of a file.")
+	flag.StringVar(&rsrc, "rsrc", "", "resource of file to retrieve report for. A resource can be md5, sha-1 or sha-2 sum of a file.")
 }
 
 // check - an error checking function
