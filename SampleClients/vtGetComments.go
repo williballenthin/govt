@@ -1,18 +1,13 @@
-// vtFileDownload - fetches a sample from VirusTotal for the given resource. A resource can be MD5, SHA-1 or SHA-2 of a file.
-//  vtFileDownload -rsrc=8ac31b7350a95b0b492434f9ae2f1cde
-//
-// This feature of the VirusTotal API is just available if you have a private API key.
-// With a public API key you can not download samples.
+// vtFileReport - fetches a report from VirusTotal for the given resource. A resource can be MD5, SHA-1 or SHA-2 of a file.
+//  vtFileReport -rsrc=8ac31b7350a95b0b492434f9ae2f1cde
 //
 package main
 
 import (
 	"encoding/json"
-	"fmt"
-	//"github.com/williballenthin/govt"
 	"flag"
-	"github.com/scusi/govt"
-	"io/ioutil"
+	"fmt"
+	"github.com/williballenthin/govt"
 	"os"
 )
 
@@ -44,15 +39,11 @@ func main() {
 	c := govt.Client{Apikey: apikey, Url: apiurl}
 
 	// get a file report
-	r, err := c.GetFile(rsrc)
+	r, err := c.GetComments(rsrc)
 	check(err)
 	//fmt.Printf("r: %s\n", r)
 	j, err := json.MarshalIndent(r, "", "    ")
-	fmt.Printf("FileReport: ")
+	fmt.Printf("Comments for %s: ", rsrc)
 	os.Stdout.Write(j)
 	//fmt.Printf("%d %s \t%s \t%s \t%d/%d\n", r.Status.ResponseCode, r.Status.VerboseMsg, r.Resource, r.ScanDate, r.Positives, r.Total)
-
-	err = ioutil.WriteFile(rsrc, r.Content, 0600)
-	fmt.Printf("file %s has been written.\n", rsrc)
-	check(err)
 }

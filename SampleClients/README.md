@@ -21,3 +21,4 @@ Therefore you have to export VT_API_KEY before useing any of the provided exampl
 * vtIpReport.go - fetches a report for a given IP address
 * vtUrlReport.go - fetches a report for a given url
 * vtUrlScan.go - initiates a url scan for a given url.
+* vtGetComments.go - fetches comments from the community for a given resource
