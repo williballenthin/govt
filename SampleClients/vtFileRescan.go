@@ -6,10 +6,9 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"github.com/williballenthin/govt"
-	//"github.com/scusi/govt"
-	"flag"
 	"os"
 )
 
@@ -22,7 +21,7 @@ var rsrc string
 func init() {
 	flag.StringVar(&apikey, "apikey", os.Getenv("VT_API_KEY"), "Set environment variable VT_API_KEY to your VT API Key or specify on prompt")
 	flag.StringVar(&apiurl, "apiurl", "https://www.virustotal.com/vtapi/v2/", "URL of the VirusTotal API to be used.")
-	flag.StringVar(&rsrc, "rsrc", "8ac31b7350a95b0b492434f9ae2f1cde", "md5 sum of a file to as VT about.")
+	flag.StringVar(&rsrc, "rsrc", "", "md5 sum of a file to as VT about.")
 }
 
 // check - an error checking function
@@ -35,7 +34,7 @@ func check(e error) {
 func main() {
 	flag.Parse()
 	if rsrc == "" {
-		fmt.Println("-rsrc=<md5|sha1|sha2> fehlt!")
+		fmt.Println("-rsrc=<md5|sha1|sha2> missing!")
 		os.Exit(1)
 	}
 	c := govt.Client{Apikey: apikey, Url: apiurl}

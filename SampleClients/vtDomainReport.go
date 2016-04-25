@@ -35,7 +35,7 @@ func check(e error) {
 func main() {
 	flag.Parse()
 	if domain == "" {
-		fmt.Println("-domain=<domainname> fehlt!")
+		fmt.Println("-domain=<domainname> missing!")
 		os.Exit(1)
 	}
 	c := govt.Client{Apikey: apikey, Url: apiurl}

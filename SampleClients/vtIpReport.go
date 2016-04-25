@@ -21,7 +21,7 @@ var ip string
 func init() {
 	flag.StringVar(&apikey, "apikey", os.Getenv("VT_API_KEY"), "Set environment variable VT_API_KEY to your VT API Key or specify on prompt")
 	flag.StringVar(&apiurl, "apiurl", "https://www.virustotal.com/vtapi/v2/", "URL of the VirusTotal API to be used.")
-	flag.StringVar(&ip, "ip", "193.99.144.80", "ip sum of a file to as VT about.")
+	flag.StringVar(&ip, "ip", "", "ip sum of a file to as VT about.")
 }
 
 // check - an error checking function
@@ -34,7 +34,7 @@ func check(e error) {
 func main() {
 	flag.Parse()
 	if ip == "" {
-		fmt.Println("-ip=<ip> fehlt!")
+		fmt.Println("-ip=<ip> missing!")
 		os.Exit(1)
 	}
 	c := govt.Client{Apikey: apikey, Url: apiurl}
