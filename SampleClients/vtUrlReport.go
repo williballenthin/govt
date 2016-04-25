@@ -34,7 +34,7 @@ func check(e error) {
 func main() {
 	flag.Parse()
 	if url == "" {
-		fmt.Println("-url=<url> fehlt!")
+		fmt.Println("-url=<url> missing!")
 		os.Exit(1)
 	}
 	c := govt.Client{Apikey: apikey, Url: apiurl}
