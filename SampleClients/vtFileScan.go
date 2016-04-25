@@ -34,7 +34,7 @@ func check(e error) {
 func main() {
 	flag.Parse()
 	if file == "" {
-		fmt.Println("-file=<fileToScan.ext> fehlt!")
+		fmt.Println("-file=<fileToScan.ext> missing!")
 		os.Exit(1)
 	}
 	c := govt.Client{Apikey: apikey, Url: apiurl}
