@@ -41,9 +41,7 @@ func main() {
 	// get a file report
 	r, err := c.GetComments(rsrc)
 	check(err)
-	//fmt.Printf("r: %s\n", r)
 	j, err := json.MarshalIndent(r, "", "    ")
 	fmt.Printf("Comments for %s: ", rsrc)
 	os.Stdout.Write(j)
-	//fmt.Printf("%d %s \t%s \t%s \t%d/%d\n", r.Status.ResponseCode, r.Status.VerboseMsg, r.Resource, r.ScanDate, r.Positives, r.Total)
 }
