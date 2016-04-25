@@ -33,7 +33,7 @@ func check(e error) {
 func main() {
 	flag.Parse()
 	if list == "" {
-		fmt.Println("-list=<file> fehlt!")
+		fmt.Println("-list=<file> missing!")
 		os.Exit(1)
 	}
 	// create a new VT client
