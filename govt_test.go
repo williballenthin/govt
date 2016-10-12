@@ -9,28 +9,42 @@ June, 2013.
 */
 package govt
 
-import "testing"
+import (
+	"flag"
+	"fmt"
+	"os"
+	"testing"
+	"time"
+)
 
-var apikey string = ""
+var runExpensive bool
+var runPrivate bool
+var apikey string
+
+func init() {
+	flag.StringVar(&apikey, "apikey", "", "VT api key used for testing")
+	flag.BoolVar(&runExpensive, "run-expensive", false, "Flag to run expensive tests")
+	flag.BoolVar(&runPrivate, "run-private", false, "Flag to run private API tests")
+	flag.Parse()
+	if apikey == "" {
+		fmt.Println("API key is required to run the tests agains VT")
+		os.Exit(1)
+	}
+}
 
 // TestGetFileReport tests the structure and execution of a request.
 func TestGetFileReport(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-		return
-	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	var testMd5 string = "eeb024f2c81f0d55936fb825d21a91d6"
+	var testMd5 = "eeb024f2c81f0d55936fb825d21a91d6"
 	report, err := govt.GetFileReport(testMd5)
 	if err != nil {
 		t.Error("Error requesting report: ", err.Error())
 		return
 	}
 	if report.ResponseCode != 1 {
-		t.Error("Response code indicates failure: %d", report.ResponseCode)
+		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
 		return
 	}
 
@@ -42,16 +56,11 @@ func TestGetFileReport(t *testing.T) {
 
 // TestGetDetailedFileReport tests the structure and execution of a request.
 func TestGetDetailedFileReport(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-		return
-	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	var testMd5 string = "e320908e9cac93876be08549bf0be67f"
-	var testFpr []string = []string{
+	var testMd5 = "e320908e9cac93876be08549bf0be67f"
+	var testFpr = []string{
 		"9617094A1CFB59AE7C1F7DFDB6739E4E7C40508F", // Microsoft Corporation
 		"3036E3B25B88A55B86FC90E6E9EAAD5081445166", // Microsoft Code Signing PCA
 		"A43489159A520F0D93D032CCAF37E7FE20A8B419", // Microsoft Root Authority
@@ -63,7 +72,7 @@ func TestGetDetailedFileReport(t *testing.T) {
 		return
 	}
 	if report.ResponseCode != 1 {
-		t.Error("Response code indicates failure: %d", report.ResponseCode)
+		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
 		return
 	}
 
@@ -85,11 +94,6 @@ func TestGetDetailedFileReport(t *testing.T) {
 
 // TestGetFileReports tests the structure and execution of a request.
 func TestGetFileReports(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-		return
-	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
@@ -102,7 +106,7 @@ func TestGetFileReports(t *testing.T) {
 
 	for _, r := range *reports {
 		if r.ResponseCode != 1 {
-			t.Error("Response code indicates failure: %d", r.ResponseCode)
+			t.Errorf("Response code indicates failure: %d", r.ResponseCode)
 			return
 		}
 
@@ -111,36 +115,49 @@ func TestGetFileReports(t *testing.T) {
 
 // TestRescanFile tests the structure and execution of a request.
 func TestRescanFile(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-		return
-	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	var testMd5 string = "eeb024f2c81f0d55936fb825d21a91d6"
+	var testMd5 = "eeb024f2c81f0d55936fb825d21a91d6"
 	report, err := govt.RescanFile(testMd5)
 	if err != nil {
 		t.Error("Error requesting rescan: ", err.Error())
 		return
 	}
 	if report.ResponseCode != 1 {
-		t.Error("Response code indicates failure: %d", report.ResponseCode)
+		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
 		return
 	}
 }
 
-/* unless you have a high API quota, I recommend not executing the full test suite,
- *  as you'll quickly blow through you're allotment
+// Private API calls
+
+// TestFileFeed tests the new files feed private API
+func TestFileFeed(t *testing.T) {
+	if !runPrivate {
+		t.Skip("To run this test, use: go test -run-private")
+	}
+	govt := Client{Apikey: apikey}
+	govt.UseDefaultUrl()
+
+	// Current time in UTC minus one hour
+	var packageRange = time.Now().UTC().Add(time.Duration(-1 * time.Hour)).Format("20060102T1504")
+
+	feedElements, err := govt.GetFileFeed(packageRange)
+	if err != nil {
+		t.Error("Error requesting feed: ", err.Error())
+		return
+	}
+	fmt.Println(len(feedElements))
+}
+
+// Expensive from here
 
 // TestRescanFiles tests the structure and execution of a request.
 func TestRescanFiles(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-    return
+	if !runExpensive {
+		t.Skip("To run this test, use: go test -run-expensive")
 	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
@@ -148,166 +165,153 @@ func TestRescanFiles(t *testing.T) {
 	reports, err := govt.RescanFiles(testMd5s)
 	if err != nil {
 		t.Error("Error requesting rescan: ", err.Error())
-    return
+		return
 	}
-  for _, report := range *reports {
-    if report.ResponseCode != 1 {
-      t.Error("Response code indicates failure: %d", report.ResponseCode)
-      return
-    }
-  }
+	for _, report := range *reports {
+		if report.ResponseCode != 1 {
+			t.Errorf("Response code indicates failure: %d", report.ResponseCode)
+			return
+		}
+	}
 }
 
 // TestScanUrl tests the structure and execution of a request.
 func TestScanUrl(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-    return
+	if !runExpensive {
+		t.Skip("To run this test, use: go test -run-expensive")
 	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	var testUrl string = "http://www.virustotal.com"
-	report, err := govt.RescanFile(testUrl)
+	var testURL = "http://www.virustotal.com"
+	report, err := govt.RescanFile(testURL)
 	if err != nil {
 		t.Error("Error requesting Scan: ", err.Error())
-    return
+		return
 	}
-  if report.ResponseCode != 1 {
-		t.Error("Response code indicates failure: %d", report.ResponseCode)
-    return
-  }
+	fmt.Println(report)
+	if report.ResponseCode != 1 {
+		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
+		return
+	}
 }
 
 // TestScanUrls tests the structure and execution of a request.
 func TestScanUrls(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-    return
+	if !runExpensive {
+		t.Skip("To run this test, use: go test -run-expensive")
 	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	testUrls := []string{"http://www.virustotal.com", "http://www.google.com"}
-	reports, err := govt.ScanUrls(testUrls)
+	testURLs := []string{"http://www.virustotal.com", "http://www.google.com"}
+	reports, err := govt.ScanUrls(testURLs)
 	if err != nil {
 		t.Error("Error requesting scan: ", err.Error())
-    return
+		return
 	}
-  for _, report := range *reports {
-    if report.ResponseCode != 1 {
-      t.Error("Response code indicates failure: %d", report.ResponseCode)
-      return
-    }
-  }
+	for _, report := range *reports {
+		if report.ResponseCode != 1 {
+			t.Errorf("Response code indicates failure: %d", report.ResponseCode)
+			return
+		}
+	}
 }
 
 // TestGetUrlReport tests the structure and execution of a request.
 func TestGetUrlReport(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-    return
+	if !runExpensive {
+		t.Skip("To run this test, use: go test -run-expensive")
 	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	var testUrl string = "http://www.virustotal.com"
-	report, err := govt.GetUrlReport(testUrl)
+	var testURL = "http://www.virustotal.com/"
+	report, err := govt.GetUrlReport(testURL)
 	if err != nil {
 		t.Error("Error requesting report: ", err.Error())
-    return
+		return
 	}
-  if report.ResponseCode != 1 {
-		t.Error("Response code indicates failure: %d", report.ResponseCode)
-    return
-  }
+	if report.ResponseCode != 1 {
+		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
+		return
+	}
 
-	if report.Url != testUrl {
-		t.Error("Requested URL does not match result: ", testUrl, " vs. ", report.Url)
-    return
+	if report.Url != testURL {
+		t.Error("Requested URL does not match result: ", testURL, " vs. ", report.Url)
+		return
 	}
 }
 
 // TestGetUrlReports tests the structure and execution of a request.
 func TestGetUrlReports(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-    return
+	if !runExpensive {
+		t.Skip("To run this test, use: go test -run-expensive")
 	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	var testUrls []string = []string{"http://www.virustotal.com", "http://www.google.com"}
-	reports, err := govt.GetUrlReports(testUrls)
+	var testURLs = []string{"http://www.virustotal.com", "http://www.google.com"}
+	reports, err := govt.GetUrlReports(testURLs)
 	if err != nil {
 		t.Error("Error requesting report: ", err.Error())
-    return
+		return
 	}
-  for _, report := range *reports {
-    if report.ResponseCode != 1 {
-      t.Error("Response code indicates failure: %d", report.ResponseCode)
-      return
-    }
-  }
+	for _, report := range *reports {
+		if report.ResponseCode != 1 {
+			t.Errorf("Response code indicates failure: %d", report.ResponseCode)
+			return
+		}
+	}
 }
 
 // TestGetIpReport tests the structure and execution of a request.
 //   It does not perform logical tests on the returned data.
 func TestGetIpReport(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-    return
+	if !runExpensive {
+		t.Skip("To run this test, use: go test -run-expensive")
 	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	var testIp string = "8.8.8.8"
-	report, err := govt.GetIpReport(testIp)
+	var testIP = "8.8.8.8"
+	report, err := govt.GetIpReport(testIP)
 	if err != nil {
 		t.Error("Error requesting report: ", err.Error())
-    return
+		return
 	}
-  if report.ResponseCode != 1 {
-		t.Error("Response code indicates failure: %d", report.ResponseCode)
-    return
-  }
+	if report.ResponseCode != 1 {
+		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
+		return
+	}
 }
 
 // TestGetDomainReport tests the structure and execution of a request.
 //   It does not perform logical tests on the returned data.
 func TestGetDomainReport(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-    return
+	if !runExpensive {
+		t.Skip("To run this test, use: go test -run-expensive")
 	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
-	var testDomain string = "www.virustotal.com"
+	var testDomain = "www.virustotal.com"
 	report, err := govt.GetDomainReport(testDomain)
 	if err != nil {
 		t.Error("Error requesting report: ", err.Error())
-    return
+		return
 	}
-  if report.ResponseCode != 1 {
-		t.Error("Response code indicates failure: %d", report.ResponseCode)
-    return
-  }
+	if report.ResponseCode != 1 {
+		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
+		return
+	}
 }
 
 // TestGetComments tests the structure and execution of a request.
 func TestGetComments(t *testing.T) {
-	if apikey == "" {
-		t.Error("Unfortunately, you must edit the test case and provide your API key")
-		return
+	if !runExpensive {
+		t.Skip("To run this test, use: go test -run-expensive")
 	}
-
 	govt := Client{Apikey: apikey}
 	govt.UseDefaultUrl()
 
@@ -318,9 +322,7 @@ func TestGetComments(t *testing.T) {
 		return
 	}
 	if report.ResponseCode != 1 {
-		t.Error("Response code indicates failure: %d", report.ResponseCode)
+		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
 		return
 	}
 }
-
-*/
