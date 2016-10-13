@@ -38,8 +38,7 @@ func TestGetFileReport(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	var testMd5 string = "eeb024f2c81f0d55936fb825d21a91d6"
+	var testMd5 = "eeb024f2c81f0d55936fb825d21a91d6"
 	report, err := govt.GetFileReport(testMd5)
 
 	if err != nil {
@@ -155,7 +154,6 @@ func TestFileFeed(t *testing.T) {
 	_, err = govt.GetFileFeed(packageRange)
 	if err != nil {
 		t.Error("Error requesting feed: ", err.Error())
-		return
 	}
 }
 
