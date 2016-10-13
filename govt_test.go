@@ -152,12 +152,11 @@ func TestFileFeed(t *testing.T) {
 	// Current time in UTC minus one hour
 	var packageRange = time.Now().UTC().Add(time.Duration(-1 * time.Hour)).Format("20060102T1504")
 
-	feedElements, err := govt.GetFileFeed(packageRange)
+	_, err = govt.GetFileFeed(packageRange)
 	if err != nil {
 		t.Error("Error requesting feed: ", err.Error())
 		return
 	}
-	fmt.Println(len(feedElements))
 }
 
 // Expensive from here
@@ -196,13 +195,12 @@ func TestScanUrl(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var testURL = "http://www.virustotal.com"
-	report, err := govt.RescanFile(testURL)
+	var testURL = "http://www.virustotal.com/"
+	report, err := govt.ScanUrl(testURL)
 	if err != nil {
 		t.Error("Error requesting Scan: ", err.Error())
 		return
 	}
-	fmt.Println(report)
 	if report.ResponseCode != 1 {
 		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
 		return
