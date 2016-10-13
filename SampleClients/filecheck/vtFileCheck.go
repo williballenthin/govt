@@ -4,8 +4,9 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/slavikm/govt"
 	"os"
+
+	"github.com/williballenthin/govt"
 )
 
 var apikey string

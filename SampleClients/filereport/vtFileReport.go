@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/glaslos/govt"
+	"github.com/williballenthin/govt"
 )
 
 var apikey string

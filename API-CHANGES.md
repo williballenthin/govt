@@ -2,13 +2,13 @@
 
 1. Initialization
 -----------------
-Previoiusly, initalizing the client required creating the client with the relevant Apikey and other parameters:
+Previously, initializing the client required creating the client with the relevant API key and other parameters:
 ```
    // Create the client
    c := govt.Client{Apikey: "api key"}
 ```
 
-Now, the initilization is done via the New function with which checks that the client is initialized correctly:
+Now, the initialization is done via the New function with which checks that the client is initialized correctly:
 ```
   // Create the client
   c := govt.New(govt.SetErrorLog(log.New(os.Stderr, "VT: ", log.Lshortfile), govt.SetApikey(apikey), govt.SetUrl(apiurl))

@@ -6,9 +6,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/slavikm/govt"
 	"io"
 	"os"
+
+	"github.com/williballenthin/govt"
 )
 
 var apikey string

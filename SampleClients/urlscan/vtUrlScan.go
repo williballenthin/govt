@@ -6,8 +6,9 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/slavikm/govt"
 	"os"
+
+	"github.com/williballenthin/govt"
 )
 
 var apikey string
@@ -42,6 +43,7 @@ func main() {
 	check(err)
 	fmt.Printf("r: %s\n", r)
 	j, err := json.MarshalIndent(r, "", "    ")
+	check(err)
 	fmt.Printf("UrlReport: ")
 	os.Stdout.Write(j)
 }
