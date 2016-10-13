@@ -10,9 +10,10 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/slavikm/govt"
 	"io/ioutil"
 	"os"
+
+	"github.com/glaslos/govt"
 )
 
 var apikey string
@@ -23,7 +24,7 @@ var rsrc string
 func init() {
 	flag.StringVar(&apikey, "apikey", os.Getenv("VT_API_KEY"), "Set environment variable VT_API_KEY to your VT API Key or specify on prompt")
 	flag.StringVar(&apiurl, "apiurl", "https://www.virustotal.com/vtapi/v2/", "URL of the VirusTotal API to be used.")
-	flag.StringVar(&rsrc, "rsrc", "8ac31b7350a95b0b492434f9ae2f1cde", "resource of file to retrieve report for. A resource can be md5, sha-1 or sha-2 sum of a file.")
+	flag.StringVar(&rsrc, "rsrc", "", "resource of file to retrieve report for. A resource can be md5, sha-1 or sha-2 sum of a file.")
 }
 
 // check - an error checking function
@@ -50,6 +51,6 @@ func main() {
 	os.Stdout.Write(j)
 
 	err = ioutil.WriteFile(rsrc+".pcap", r.Content, 0600)
-	fmt.Printf("file %s has been written.\n", rsrc+".pcap")
 	check(err)
+	fmt.Printf("file %s has been written.\n", rsrc+".pcap")
 }
