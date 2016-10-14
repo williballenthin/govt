@@ -492,11 +492,11 @@ func (self *Client) handleError(resp *http.Response) error {
 	return nil
 }
 
-// makeApiGetRequest fetches a URL with querystring via HTTP GET and
+// MakeAPIGetRequest fetches a URL with querystring via HTTP GET and
 //  returns the response if the status code is HTTP 200
 // `parameters` should not include the apikey.
 // The caller must call `resp.Body.Close()`.
-func (client *Client) makeApiGetRequest(fullurl string, parameters Parameters) (resp *http.Response, err error) {
+func (client *Client) MakeAPIGetRequest(fullurl string, parameters Parameters) (resp *http.Response, err error) {
 	values := url.Values{}
 	values.Set("apikey", client.apikey)
 	for k, v := range parameters {
@@ -531,7 +531,7 @@ func (client *Client) makeApiGetRequest(fullurl string, parameters Parameters) (
 //  returns the response if the status code is HTTP 200
 // `parameters` should not include the apikey.
 // The caller must call `resp.Body.Close()`.
-func (client *Client) makeApiPostRequest(fullurl string, parameters map[string]string) (resp *http.Response, err error) {
+func (client *Client) makeApiPostRequest(fullurl string, parameters Parameters) (resp *http.Response, err error) {
 	values := url.Values{}
 	values.Set("apikey", client.apikey)
 	for k, v := range parameters {
@@ -637,7 +637,7 @@ func (client *Client) fetchApiJson(method string, actionurl string, parameters P
 	var resp *http.Response
 	switch method {
 	case "GET":
-		resp, err = client.makeApiGetRequest(theurl, parameters)
+		resp, err = client.MakeAPIGetRequest(theurl, parameters)
 	case "POST":
 		resp, err = client.makeApiPostRequest(theurl, parameters)
 	case "FILE":
@@ -663,7 +663,7 @@ func (client *Client) fetchApiJson(method string, actionurl string, parameters P
 func (client *Client) fetchApiFile(actionurl string, parameters Parameters) (data []byte, err error) {
 	theurl := client.url + actionurl
 	var resp *http.Response
-	resp, err = client.makeApiGetRequest(theurl, parameters)
+	resp, err = client.MakeAPIGetRequest(theurl, parameters)
 	if err != nil {
 		return nil, err
 	}
@@ -782,7 +782,7 @@ func readData(br *bufio.Reader) (line []byte, err error) {
 func (client *Client) GetFileFeed(packageRange string) ([]FileFeed, error) {
 	var resp *http.Response
 	feedElements := []FileFeed{}
-	resp, err := client.makeApiGetRequest(client.url+"file/feed", Parameters{"package": packageRange})
+	resp, err := client.MakeAPIGetRequest(client.url+"file/feed", Parameters{"package": packageRange})
 	if err != nil {
 		return feedElements, err
 	}
