@@ -5,16 +5,15 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/williballenthin/govt"
-	//"github.com/scusi/govt"
 	"flag"
+	"fmt"
 	"os"
+
+	"github.com/williballenthin/govt"
 )
 
 var apikey string
 var apiurl string
-var domain string
 var url string
 
 // init - initializes flag variables.
@@ -37,13 +36,15 @@ func main() {
 		fmt.Println("-url=<url> missing!")
 		os.Exit(1)
 	}
-	c := govt.Client{Apikey: apikey, Url: apiurl}
+	c, err := govt.New(govt.SetApikey(apikey), govt.SetUrl(apiurl))
+	check(err)
 
 	// get a file report
 	r, err := c.GetUrlReport(url)
 	check(err)
 	//fmt.Printf("r: %s\n", r)
 	j, err := json.MarshalIndent(r, "", "    ")
+	check(err)
 	fmt.Printf("UrlReport: ")
 	os.Stdout.Write(j)
 	fmt.Println("")

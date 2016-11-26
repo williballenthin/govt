@@ -6,17 +6,16 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/williballenthin/govt"
-	//"github.com/scusi/govt"
 	"flag"
+	"fmt"
 	"os"
+
+	"github.com/williballenthin/govt"
 )
 
 var apikey string
 var apiurl string
 var domain string
-var md5 string
 
 // init - initializes flag variables.
 func init() {
@@ -38,8 +37,8 @@ func main() {
 		fmt.Println("-domain=<domainname> missing!")
 		os.Exit(1)
 	}
-	c := govt.Client{Apikey: apikey, Url: apiurl}
-
+	c, err := govt.New(govt.SetApikey(apikey), govt.SetUrl(apiurl))
+	check(err)
 	// get a domain report (passive dns info)
 	d, err := c.GetDomainReport(domain)
 	check(err)

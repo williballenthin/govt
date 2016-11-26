@@ -1,27 +1,25 @@
-// vtIpReport - fetches information about a given IP from VirusTotal.
-//  vtIpReport -ip=8.8.8.8
-//
+// vtUrlScan - Requests VirusTotal to scan a given URL
+//  vtUrlScan -url=http://www.virustotal.com/
 package main
 
 import (
 	"encoding/json"
-	"fmt"
-	"github.com/williballenthin/govt"
-	//"github.com/scusi/govt"
 	"flag"
+	"fmt"
 	"os"
+
+	"github.com/williballenthin/govt"
 )
 
 var apikey string
 var apiurl string
-var domain string
-var ip string
+var url string
 
 // init - initializes flag variables.
 func init() {
 	flag.StringVar(&apikey, "apikey", os.Getenv("VT_API_KEY"), "Set environment variable VT_API_KEY to your VT API Key or specify on prompt")
 	flag.StringVar(&apiurl, "apiurl", "https://www.virustotal.com/vtapi/v2/", "URL of the VirusTotal API to be used.")
-	flag.StringVar(&ip, "ip", "", "ip sum of a file to as VT about.")
+	flag.StringVar(&url, "url", "", "url of a file to as VT about.")
 }
 
 // check - an error checking function
@@ -33,17 +31,19 @@ func check(e error) {
 
 func main() {
 	flag.Parse()
-	if ip == "" {
-		fmt.Println("-ip=<ip> missing!")
+	if url == "" {
+		fmt.Println("-url=<url> missing!")
 		os.Exit(1)
 	}
-	c := govt.Client{Apikey: apikey, Url: apiurl}
-
-	// get a file report
-	r, err := c.GetIpReport(ip)
+	c, err := govt.New(govt.SetApikey(apikey), govt.SetUrl(apiurl))
 	check(err)
-	j, err := json.MarshalIndent(r, "", "    ")
-	fmt.Printf("IP Report: ")
-	os.Stdout.Write(j)
 
+	// get an URL report
+	r, err := c.ScanUrl(url)
+	check(err)
+	fmt.Printf("r: %s\n", r)
+	j, err := json.MarshalIndent(r, "", "    ")
+	check(err)
+	fmt.Printf("UrlReport: ")
+	os.Stdout.Write(j)
 }

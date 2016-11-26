@@ -10,14 +10,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/williballenthin/govt"
 	"io/ioutil"
 	"os"
+
+	"github.com/williballenthin/govt"
 )
 
 var apikey string
 var apiurl string
-var domain string
 var rsrc string
 
 // init - initializes flag variables.
@@ -40,18 +40,17 @@ func main() {
 		fmt.Println("-rsrc=<md5|sha-1|sha-2> not given!")
 		os.Exit(1)
 	}
-	c := govt.Client{Apikey: apikey, Url: apiurl}
+	c, err := govt.New(govt.SetApikey(apikey), govt.SetUrl(apiurl))
+	check(err)
 
 	// get a file report
 	r, err := c.GetFileNetworkTraffic(rsrc)
 	check(err)
-	//fmt.Printf("r: %s\n", r)
 	j, err := json.MarshalIndent(r, "", "    ")
 	fmt.Printf("File Network Traffic: ")
 	os.Stdout.Write(j)
-	//fmt.Printf("%d %s \t%s \t%s \t%d/%d\n", r.Status.ResponseCode, r.Status.VerboseMsg, r.Resource, r.ScanDate, r.Positives, r.Total)
 
 	err = ioutil.WriteFile(rsrc+".pcap", r.Content, 0600)
-	fmt.Printf("file %s has been written.\n", rsrc+".pcap")
 	check(err)
+	fmt.Printf("file %s has been written.\n", rsrc+".pcap")
 }

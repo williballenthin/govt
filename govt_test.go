@@ -34,11 +34,13 @@ func init() {
 
 // TestGetFileReport tests the structure and execution of a request.
 func TestGetFileReport(t *testing.T) {
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
-
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 	var testMd5 = "eeb024f2c81f0d55936fb825d21a91d6"
 	report, err := govt.GetFileReport(testMd5)
+
 	if err != nil {
 		t.Error("Error requesting report: ", err.Error())
 		return
@@ -56,8 +58,10 @@ func TestGetFileReport(t *testing.T) {
 
 // TestGetDetailedFileReport tests the structure and execution of a request.
 func TestGetDetailedFileReport(t *testing.T) {
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var testMd5 = "e320908e9cac93876be08549bf0be67f"
 	var testFpr = []string{
@@ -94,8 +98,10 @@ func TestGetDetailedFileReport(t *testing.T) {
 
 // TestGetFileReports tests the structure and execution of a request.
 func TestGetFileReports(t *testing.T) {
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	md5s := []string{"eeb024f2c81f0d55936fb825d21a91d6", "1F4C43ADFD45381CFDAD1FAFEA16B808"}
 	reports, err := govt.GetFileReports(md5s)
@@ -109,15 +115,15 @@ func TestGetFileReports(t *testing.T) {
 			t.Errorf("Response code indicates failure: %d", r.ResponseCode)
 			return
 		}
-
 	}
 }
 
 // TestRescanFile tests the structure and execution of a request.
 func TestRescanFile(t *testing.T) {
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
-
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 	var testMd5 = "eeb024f2c81f0d55936fb825d21a91d6"
 	report, err := govt.RescanFile(testMd5)
 	if err != nil {
@@ -137,18 +143,18 @@ func TestFileFeed(t *testing.T) {
 	if !runPrivate {
 		t.Skip("To run this test, use: go test -run-private")
 	}
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Current time in UTC minus one hour
 	var packageRange = time.Now().UTC().Add(time.Duration(-1 * time.Hour)).Format("20060102T1504")
 
-	feedElements, err := govt.GetFileFeed(packageRange)
+	_, err = govt.GetFileFeed(packageRange)
 	if err != nil {
 		t.Error("Error requesting feed: ", err.Error())
-		return
 	}
-	fmt.Println(len(feedElements))
 }
 
 // Expensive from here
@@ -158,8 +164,10 @@ func TestRescanFiles(t *testing.T) {
 	if !runExpensive {
 		t.Skip("To run this test, use: go test -run-expensive")
 	}
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	testMd5s := []string{"eeb024f2c81f0d55936fb825d21a91d6", "eeb024f2c81f0d55936fb825d21a91d6"}
 	reports, err := govt.RescanFiles(testMd5s)
@@ -180,16 +188,17 @@ func TestScanUrl(t *testing.T) {
 	if !runExpensive {
 		t.Skip("To run this test, use: go test -run-expensive")
 	}
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	var testURL = "http://www.virustotal.com"
-	report, err := govt.RescanFile(testURL)
+	var testURL = "http://www.virustotal.com/"
+	report, err := govt.ScanUrl(testURL)
 	if err != nil {
 		t.Error("Error requesting Scan: ", err.Error())
 		return
 	}
-	fmt.Println(report)
 	if report.ResponseCode != 1 {
 		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
 		return
@@ -201,8 +210,10 @@ func TestScanUrls(t *testing.T) {
 	if !runExpensive {
 		t.Skip("To run this test, use: go test -run-expensive")
 	}
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	testURLs := []string{"http://www.virustotal.com", "http://www.google.com"}
 	reports, err := govt.ScanUrls(testURLs)
@@ -223,8 +234,10 @@ func TestGetUrlReport(t *testing.T) {
 	if !runExpensive {
 		t.Skip("To run this test, use: go test -run-expensive")
 	}
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var testURL = "http://www.virustotal.com/"
 	report, err := govt.GetUrlReport(testURL)
@@ -248,9 +261,10 @@ func TestGetUrlReports(t *testing.T) {
 	if !runExpensive {
 		t.Skip("To run this test, use: go test -run-expensive")
 	}
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
-
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 	var testURLs = []string{"http://www.virustotal.com", "http://www.google.com"}
 	reports, err := govt.GetUrlReports(testURLs)
 	if err != nil {
@@ -271,8 +285,10 @@ func TestGetIpReport(t *testing.T) {
 	if !runExpensive {
 		t.Skip("To run this test, use: go test -run-expensive")
 	}
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var testIP = "8.8.8.8"
 	report, err := govt.GetIpReport(testIP)
@@ -292,8 +308,10 @@ func TestGetDomainReport(t *testing.T) {
 	if !runExpensive {
 		t.Skip("To run this test, use: go test -run-expensive")
 	}
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	var testDomain = "www.virustotal.com"
 	report, err := govt.GetDomainReport(testDomain)
@@ -312,8 +330,10 @@ func TestGetComments(t *testing.T) {
 	if !runExpensive {
 		t.Skip("To run this test, use: go test -run-expensive")
 	}
-	govt := Client{Apikey: apikey}
-	govt.UseDefaultUrl()
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	testSHA256 := "2fcc9209ddeb18b2dbd4db5f42dd477feaf4a1c3028eb6393dbaa21bd26b800c"
 	report, err := govt.GetComments(testSHA256)
