@@ -7,7 +7,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/scusi/govt"
+	"github.com/williballenthin/govt"
 	"log"
 	"os"
 )
