@@ -52,6 +52,13 @@ type Status struct {
 	VerboseMsg   string `json:"verbose_msg"`
 }
 
+// File Search Result
+type FileSearchResult struct {
+	ResponseCode int      `json:"response_code"`
+	Offset       string   `json:"offset"`
+	Hashes       []string `json:"hashes"`
+}
+
 // FileDownloadResult
 type FileDownloadResult struct {
 	Content []byte
@@ -673,6 +680,17 @@ func (client *Client) fetchApiFile(actionurl string, parameters Parameters) (dat
 		return nil, err
 	}
 	return data, nil
+}
+
+// SearchFile(query, offset) - searches VT Inteligence for files that meet the given search criteria
+// It returns a list of hashes of files that matched the search criteria.
+// See the following URL for possible search operators:
+// https://www.virustotal.com/intelligence/help/file-search/#search-operators
+// This functionality is part of the VT PrivateAPI.
+func (client *Client) SearchFile(query, offset string) (r *FileSearchResult, err error) {
+	r = &FileSearchResult{}
+	err = client.fetchApiJson("GET", "file/search", Parameters{"query": query, "offset": offset}, r)
+	return r, err
 }
 
 // Public API
