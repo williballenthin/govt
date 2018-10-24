@@ -22,3 +22,4 @@ Therefore you have to export VT_API_KEY before using any of the provided example
 * vtUrlReport.go - fetches a report for a given url
 * vtUrlScan.go - initiates a url scan for a given url.
 * vtGetComments.go - fetches comments from the community for a given resource
+* vtFileBehaviour.go - fetches a Cuckoo report of the file's execution

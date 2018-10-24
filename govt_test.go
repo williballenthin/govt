@@ -157,6 +157,29 @@ func TestFileFeed(t *testing.T) {
 	}
 }
 
+// TestGetFileBehaviour tests the structure and execution of a request.
+func TestGetFileBehaviour(t *testing.T) {
+	if !runPrivate {
+		t.Skip("To run this test, use: go test -run-private")
+	}
+	govt, err := New(SetApikey(apikey))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testMD5 := "1F4C43ADFD45381CFDAD1FAFEA16B808"
+	fileBehaviour, err := govt.GetFileBehaviour(testMD5)
+	if err != nil {
+		t.Error("Error requesting report: ", err.Error())
+		return
+	}
+
+	if fileBehaviour.ResponseCode == 0 && fileBehaviour.VerboseMsg != "" {
+		t.Errorf("Response code indicates failure: %d", fileBehaviour.ResponseCode)
+		return
+	}
+}
+
 // Expensive from here
 
 // TestRescanFiles tests the structure and execution of a request.

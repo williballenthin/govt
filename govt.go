@@ -166,6 +166,113 @@ type AdditionnalInfoResult struct {
 	TrustedVerdict   TrustedVerdictResult `json:"trusted_verdict"`
 }
 
+type FileBehaviourResult struct {
+	Status
+	Info        ReportInfo  `json:"info"`
+	Behaviour   Behaviour   `json:"behavior"`
+	NetworkInfo NetworkInfo `json:"network"`
+	Syscalls    []Syscall   `json:"syscalls"`
+}
+
+type ReportInfo struct {
+	Started  string `json:"started"`
+	Ended    string `json:"ended"`
+	Duration string `json:"duration"`
+	Version  string `json:"version"`
+}
+
+type Behaviour struct {
+	Processes   []Process          `json:"processes"`
+	ProcessTree []ProcessTreeEntry `json:"processtree"`
+	Summary     BehaviourSummary   `json:"Summary"`
+}
+
+type Process struct {
+	Name      string    `json:"process_name"`
+	ID        string    `json:"process_id"`
+	ParentID  string    `json:"parent_id"`
+	FirstSeen string    `json:"first_seen"`
+	APICalls  []APICall `json:"calls"`
+}
+
+type APICall struct {
+	FunctionName string     `json:"api"`
+	Category     string     `json:"category"`
+	Status       string     `json:"status"`
+	Return       string     `json:"return"`
+	Timestamp    string     `json:"timestamp"`
+	Repeated     int        `json:"repeated"`
+	Arguments    []Argument `json:"arguments"`
+}
+
+type Syscall struct {
+	Command       string `json:"cmd"`
+	PID           int    `json:"pid"`
+	PPID          int    `json:"ppid"`
+	WallTimestamp int64  `json:"walltimestamp"`
+	FD            string `json:"fd"`
+	Path          string `json:"path"`
+	CWD           string `json:"cwd"`
+	ExecName      string `json:"execname"`
+}
+
+type Argument struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type ProcessTreeEntry struct {
+	ID       int                `json:"pid"`
+	Name     string             `json:"name"`
+	Children []ProcessTreeEntry `json:"children"`
+}
+
+type BehaviourSummary struct {
+	Files   []string `json:"files"`
+	Keys    []string `json:"keys"`
+	Mutexes []string `json:"mutexes"`
+}
+
+type NetworkInfo struct {
+	HTTP  []HTTPEvent `json:"http"`
+	TCP   []TCPEvent  `json:"tcp"`
+	UDP   []UDPEvent  `json:"udp"`
+	DNS   []DNSEvent  `json:"dns"`
+	Hosts []string    `json:"hosts"`
+}
+
+type HTTPEvent struct {
+	Body    string `json:"body"`
+	URI     string `json:"uri"`
+	Method  string `json:"method"`
+	Host    string `json:"host"`
+	Version string `json:"version"`
+	Path    string `json:"path"`
+	Data    string `json:"data"`
+	Port    int    `json:"port"`
+}
+
+type DNSEvent struct {
+	IP       string `json:"ip"`
+	Hostname string `json:"hostname"`
+}
+
+type TCPEvent struct {
+	SrcIP   string `json:"src"`
+	SrcPort int    `json:"sport"`
+
+	DstIP   string `json:"dst"`
+	DstPort int    `json:"dport"`
+}
+
+type UDPEvent struct {
+	SrcIP   string `json:"src"`
+	SrcPort int    `json:"sport"`
+
+	DstIP   string `json:"dst"`
+	DstPort int    `json:"dport"`
+}
+
 type TrustedVerdictResult struct {
 	Organization string `json:"organization"`
 	Verdict      string `json:"verdict"`
@@ -776,6 +883,13 @@ func (client *Client) GetFileNetworkTraffic(hash string) (r *FileDownloadResult,
 	parameters := Parameters{"hash": hash}
 	data, err := client.fetchApiFile("file/network-traffic", parameters)
 	r.Content = data
+	return r, err
+}
+
+func (client *Client) GetFileBehaviour(hash string) (r *FileBehaviourResult, err error) {
+	r = &FileBehaviourResult{}
+	parameters := Parameters{"hash": hash}
+	err = client.fetchApiJson("GET", "file/behaviour", parameters, r)
 	return r, err
 }
 
