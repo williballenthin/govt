@@ -170,7 +170,7 @@ func TestGetFileBehaviour(t *testing.T) {
 	testMD5 := "1F4C43ADFD45381CFDAD1FAFEA16B808"
 	fileBehaviour, err := govt.GetFileBehaviour(testMD5)
 	if err != nil {
-		t.Error("Error requesting report: ", err.Error())
+		t.Error("Error requesting behaviour report: ", err.Error())
 		return
 	}
 
