@@ -802,18 +802,17 @@ func (client *Client) SearchFile(query, offset string) (r *FileSearchResult, err
 
 // Public API
 
-// ScanUrl asks VT to redo analysis on the specified file.
+// ScanUrl asks VT to redo analysis on the specified url.
 func (client *Client) ScanUrl(url string) (r *ScanUrlResult, err error) {
 	r = &ScanUrlResult{}
 	err = client.fetchApiJson("POST", "url/scan", Parameters{"url": url}, r)
 	return r, err
 }
 
-// ScanUrls asks VT to redo analysis on the specified files.
+// ScanUrls asks VT to redo analysis on the specified urls. Up to 25 urls.
 func (client *Client) ScanUrls(urls []string) (r *ScanUrlResults, err error) {
 	r = &ScanUrlResults{}
-	parameters := Parameters{"resource": strings.Join(urls, "\n")}
-	err = client.fetchApiJson("POST", "url/scan", parameters, r)
+	err = client.fetchApiJson("POST", "url/scan", Parameters{"url": strings.Join(urls, "\n")}, r)
 	return r, err
 }
 
