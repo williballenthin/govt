@@ -244,6 +244,9 @@ func TestScanUrls(t *testing.T) {
 		t.Error("Error requesting scan: ", err.Error())
 		return
 	}
+	if len(*reports) != len(testURLs) {
+		t.Errorf("Error count scan results. Excpected %d, but found %d", len(testURLs), len(*reports))
+	}
 	for _, report := range *reports {
 		if report.ResponseCode != 1 {
 			t.Errorf("Response code indicates failure: %d", report.ResponseCode)
