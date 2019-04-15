@@ -12,7 +12,9 @@ package govt
 import (
 	"flag"
 	"fmt"
+	"net/http"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -134,6 +136,46 @@ func TestRescanFile(t *testing.T) {
 		t.Errorf("Response code indicates failure: %d", report.ResponseCode)
 		return
 	}
+}
+
+// Test POST requests using custom http client
+func TestPostTimeout(t *testing.T) {
+	httpClient := &http.Client{
+		Timeout: time.Nanosecond * 1,
+	}
+	govt, err := New(SetApikey(apikey), SetHttpClient(httpClient))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var testMd5 = "0123456789abcdef0123456789abcdef"
+	_, err = govt.RescanFile(testMd5)
+	if err != nil {
+		if strings.Contains(err.Error(), "request canceled (Client.Timeout exceeded while awaiting headers)") {
+			return
+		}
+		t.Error(err.Error())
+	}
+	t.Error("Error requesting RescanFile with timeout not used timeout")
+}
+
+// Test GET requests using custom http client
+func TestGetTimeout(t *testing.T) {
+	httpClient := &http.Client{
+		Timeout: time.Nanosecond * 1,
+	}
+	govt, err := New(SetApikey(apikey), SetHttpClient(httpClient))
+	if err != nil {
+		t.Fatal(err)
+	}
+	md5s := []string{"0123456789abcdef0123456789abcdef"}
+	_, err = govt.GetFileReports(md5s)
+	if err != nil {
+		if strings.Contains(err.Error(), "request canceled (Client.Timeout exceeded while awaiting headers)") {
+			return
+		}
+		t.Error(err.Error())
+	}
+	t.Error("Error requesting GetFileReports with timeout not used timeout")
 }
 
 // Private API calls
