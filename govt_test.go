@@ -154,7 +154,6 @@ func TestPostTimeout(t *testing.T) {
 			return
 		}
 		t.Error(err.Error())
-		return
 	}
 	t.Error("Error requesting RescanFile with timeout not used timeout")
 }
@@ -175,7 +174,6 @@ func TestGetTimeout(t *testing.T) {
 			return
 		}
 		t.Error(err.Error())
-		return
 	}
 	t.Error("Error requesting GetFileReports with timeout not used timeout")
 }
