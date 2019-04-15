@@ -652,7 +652,7 @@ func (client *Client) makeApiPostRequest(fullurl string, parameters Parameters) 
 		values.Add(k, v)
 	}
 
-	resp, err = http.PostForm(fullurl, values)
+	resp, err = client.c.PostForm(fullurl, values)
 	if err != nil {
 		return resp, err
 	}
